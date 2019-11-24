@@ -1645,19 +1645,31 @@ set_var() {
 
 verify_vars_version ()
 {
+	# vars *is* assigned
 	if [ -f "$vars" ]
 	then
+		# Windows has limited options -- Maybe fix this one day
 		# A little housekeeping: DON'T EDIT THIS SECTION
-		if grep "Easy-RSA 3.x" "$vars"; then EASYRSA_IS_VER3=1; fi
-		[ "$EASYRSA_IS_VER3" ] && return 0
-		EASYRSA_IS_VER2=1
-	elif [ -f "$vars.bat" ]
-	then
-		EASYRSA_IS_WIN2=1
-	else
-		echo "Verify vars failed"
-		exit 9
+		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
+		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_IS_VER3=1 && return 0
+		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && EASYRSA_IS_VER2=1 && return 0
+		echo "Unexpected vars problem complaining" && exit 9
 	fi
+
+	# vars is *not* assigned
+	# Only test for vars.bat in `EASYRSA` directory
+	if [ -f "./vars.bat" ] || [ -f "$EASYRSA/vars.bat" ]
+	then
+		# vars must be assigned for Windows upgrade-23
+		vars="$EASYRSA/vars.bat"
+		EASYRSA_IS_WIN2=1 && return 0
+	fi
+
+# vars is not assigned *and* is not Windows vars.bat
+# This can only happen if EASYRSA_NO_VARS is assigned
+# Hopefully ...
+# echo "erm, something about no vars .."
+
 } # => verify_vars_version ()
 
 fail_upgrade ()
@@ -1847,6 +1859,7 @@ move_easyrsa2_programs ()
 	done
 
 	printf "%s\n" "  OK"
+	# These files are not removed on TEST run
 	printf "%s\n" "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
 }
 
@@ -1957,7 +1970,7 @@ build_v3_vars ()
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" "$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
 	printf "%s\n" "  OK"
-	printf "%s\n" "  New v3 vars file created in: $EASYRSA_VARSV3_NEW"
+	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
 }
 
 do_upgrade_23 ()
@@ -2005,14 +2018,16 @@ manage_upgrade_23 ()
 {
 	warn "\
 * WARNING!!! *
- 
-You appear to be using settings from EasyRSA-v2 which are not compatible with EasyRSA-v3.
+
+Found settings from EasyRSA-v2 which are not compatible with EasyRSA-v3.
 Before you can continue, EasyRSA must upgrade your settings and PKI.
+ * EASYRSA: ^ $EASYRSA ^
+ * Found vars: $vars
 
 These CHECKS will be made if you upgrade now:
 Before ANY changes are made a test run will be attempted ...
- * Verify that the new PKI dir does not exist and will not be over written.
- * Verify that the new backup PKI dir does not exist and will not be over written.
+ * Verify: new PKI dir does not exist and will not be over written.
+ * Verify: new backup PKI dir does not exist and will not be over written.
  * Verify and Source the current PKI settings: ./vars or ./vars.bat
  * Verify the current ca.crt
 
@@ -2047,18 +2062,19 @@ This upgrade will TEST that the upgrade works before making any changes."
 		EASYRSA_UPGRADE_TYPE="REAL"
 
 		confirm "Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
-NOTICE
+WARNING!
 
-Run the REAL upgrade: Answer yes (Once completed you will have a version 3 PKI)
-Terminate the upgrade: Answer no (No changes have been made to your current PKI)
+Run REAL upgrade: Answer yes (Once completed you will have a version 3 PKI)
+Terminate upgrade: Answer no (No changes have been made to your current PKI)
 "
 		confirm "Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
-WARNING!!!
+=======================================
+SECOND WARNING!!
 
-This upgrade will permanently write changes to your PKI (With full backup backout)
+This upgrade will permanently write changes to your PKI !
+(With full backup backout)
+=======================================
 "
-		echo
-
 		do_upgrade_23
 
 printf "%s\n" "
