@@ -1645,7 +1645,7 @@ set_var() {
 
 verify_vars_version ()
 {
-	# vars *is* assigned
+	# vars *is* a found file
 	if [ -f "$vars" ]
 	then
 		# Windows has limited options -- Maybe fix this one day
@@ -1656,7 +1656,7 @@ verify_vars_version ()
 		echo "Unexpected vars problem complaining" && exit 9
 	fi
 
-	# vars is *not* assigned
+	# vars is *not* a found file
 	# Only test for vars.bat in `EASYRSA` directory
 	if [ -f "./vars.bat" ] || [ -f "$EASYRSA/vars.bat" ]
 	then
