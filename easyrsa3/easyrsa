@@ -1692,14 +1692,17 @@ verify_vars_version ()
 		# A little housekeeping: DON'T EDIT THIS SECTION
 		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
 		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_VARS_IS_VER3=1 && return 0
+		EASYRSA_TARGET_VARSFILE="$vars"
 		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && EASYRSA_VARS_IS_VER2=1 && EASYRSA_VER2_VARSFILE="$vars" && return 0
 		echo "Unexpected vars problem complaining" && exit 9
 	fi
 
 	# vars is *not* a found file
 	# Only test for vars.bat in `prog_dir` directory
+	# EASYRSA is not defined yet
 	if [ -f "$prog_dir/vars.bat" ]
 	then
+		EASYRSA_TARGET_VARSFILE="$prog_dir/vars"
 		EASYRSA_VARS_IS_WIN2=1 && EASYRSA_VER2_VARSFILE="$prog_dir/vars.bat" && return 0
 	fi
 
@@ -1904,6 +1907,10 @@ move_easyrsa2_programs ()
 
 build_v3_vars ()
 {
+
+	# This only extracts specific values from vars/vars.bat
+	# Reading the source vars/vars.bat file needs more work
+
 	printf "%s" "> Build v3 vars file .."
 
 	EASYRSA_EXT="easyrsa-upgrade-23"
@@ -2013,6 +2020,22 @@ build_v3_vars ()
 	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
 }
 
+reset_test_ugrade ()
+{
+	# Must stay in this order
+	# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
+		rm -rf "$EASYRSA_NEW_PKI"
+		rm -rf "$EASYRSA_SAFE_PKI"
+	# EASYRSA_TARGET_VARSFILE is always the new created v3 vars
+	# Need to know if this fails
+		rm "$EASYRSA_TARGET_VARSFILE" \
+			|| fail_upgrade "Failed to remove temporary new vars file: $EASYRSA_TARGET_VARSFILE"
+	# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
+	# Need this dance because v2 vars is same name as v3 vars above
+		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
+		rm -f "$EASYRSA_VARS_LIVEBKP"
+}
+
 do_upgrade_23 ()
 {
 	printf "\n\n%s\n" "Begin **$EASYRSA_UPGRADE_TYPE** upgrade process .."
@@ -2033,16 +2056,9 @@ do_upgrade_23 ()
 EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 "
 
-	if [ "$NOSAVE" -eq 1 ] && [ -d "$EASYRSA_NEW_PKI" ] && [ -d "$EASYRSA_SAFE_PKI" ]; then
-		# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
-		# Need this dance because v2 vars is same name as v3 vars
-		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
-		rm -f "$EASYRSA_VARS_LIVEBKP"
-		# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
-		rm -rf "$EASYRSA_NEW_PKI"
-		rm -rf "$EASYRSA_SAFE_PKI"
-		# EASYRSA/vars is always the new created v3 vars
-		rm "$EASYRSA/vars"  || fail_upgrade "Failed to remove temporary new vars file: $EASYRSA/vars"
+	if [ "$NOSAVE" -eq 1 ] && [ -d "$EASYRSA_NEW_PKI" ] && [ -d "$EASYRSA_SAFE_PKI" ]
+	then
+		reset_test_ugrade
 	else
 		rm -f "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP"
 	fi
