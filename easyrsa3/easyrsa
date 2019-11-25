@@ -1576,14 +1576,16 @@ vars_setup() {
 		vars="$prog_vars"
 	fi
 
+	# First check the version of vars and only source if it is version 3
+	# This has to be tested first if vars file was not located for vars.bat
+	verify_vars_version
+
 	# If a vars file was located, source it
 	# If $EASYRSA_NO_VARS is defined (not blank) this is skipped
 	if [ -z "$EASYRSA_NO_VARS" ] && [ -n "$vars" ]; then
 
-		# First check the version of vars and only source if it is version 3
-		verify_vars_version
-
-		if [ "$EASYRSA_IS_VER3" ]; then
+		# Only source if it is version 3
+		if [ "$EASYRSA_VARS_IS_VER3" ]; then
 			#shellcheck disable=SC2034
 			EASYRSA_CALLER=1
 			# shellcheck disable=SC1090
@@ -1681,8 +1683,6 @@ set_var() {
 #   2. The #easyrsa IRC channel at freenode
 # --------------------------------------------------------------------------
 
-
-
 verify_vars_version ()
 {
 	# vars *is* a found file
@@ -1691,24 +1691,23 @@ verify_vars_version ()
 		# Windows has limited options -- Maybe fix this one day
 		# A little housekeeping: DON'T EDIT THIS SECTION
 		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
-		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_IS_VER3=1 && return 0
-		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && EASYRSA_IS_VER2=1 && return 0
+		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_VARS_IS_VER3=1 && return 0
+		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && EASYRSA_VARS_IS_VER2=1 && EASYRSA_VER2_VARSFILE="$vars" && return 0
 		echo "Unexpected vars problem complaining" && exit 9
 	fi
 
 	# vars is *not* a found file
-	# Only test for vars.bat in `EASYRSA` directory
-	if [ -f "./vars.bat" ] || [ -f "$EASYRSA/vars.bat" ]
+	# Only test for vars.bat in `prog_dir` directory
+	if [ -f "$prog_dir/vars.bat" ]
 	then
-		# vars must be assigned for Windows upgrade-23
-		vars="$EASYRSA/vars.bat"
-		EASYRSA_IS_WIN2=1 && return 0
+		EASYRSA_VARS_IS_WIN2=1 && EASYRSA_VER2_VARSFILE="$prog_dir/vars.bat" && return 0
 	fi
 
-# vars is not assigned *and* is not Windows vars.bat
-# This can only happen if EASYRSA_NO_VARS is assigned
-# Hopefully ...
-# echo "erm, something about no vars .."
+	# vars is not assigned *and* is not Windows vars.bat
+	# This can only happen if EASYRSA_NO_VARS is assigned
+	# Hopefully ...
+	# Must be EasyRSA v3
+	EASYRSA_VARS_IS_VER3=1
 
 } # => verify_vars_version ()
 
@@ -1773,18 +1772,17 @@ verify_current_pki ()
 {
 	printf "%s" "> Find CURRENT PKI vars .."
 
-	if [ -f "$EASYRSA_VER2_VARSFILE" ]
+	if [ "$EASYRSA_VARS_IS_VER2" ]
 	then
 		# shellcheck source=/dev/null
 		. "$EASYRSA_VER2_VARSFILE" 1> /dev/null
-		EASYRSA_OLD_VARS="$EASYRSA_VER2_VARSFILE"
-	elif [ -f "$EASYRSA_WIN2_VARSFILE" ]
+	elif [ "$EASYRSA_VARS_IS_WIN2" ]
 	then
-		EASYRSA_WIN2_VARSFILE_SET="$(grep "^set KEY_DIR" "$EASYRSA_WIN2_VARSFILE")"
-		KEY_DIR="$EASYRSA/${EASYRSA_WIN2_VARSFILE_SET#"set KEY_DIR="}"
-		EASYRSA_OLD_VARS="$EASYRSA_WIN2_VARSFILE"
+		# Need better regexp
+		EASYRSA_WIN2_VARSFILE_GREP="$(grep "^set KEY_DIR" "$EASYRSA_VER2_VARSFILE")"
+		KEY_DIR="$EASYRSA/${EASYRSA_WIN2_VARSFILE_GREP#"set KEY_DIR="}"
 	else
-		fail_upgrade "Cannot find CURRENT PKI vars file: $EASYRSA_VER2_VARSFILE $EASYRSA_WIN2_VARSFILE"
+		fail_upgrade "Cannot find CURRENT PKI vars file: $EASYRSA_VER2_VARSFILE"
 	fi
 
 	[ -d "$KEY_DIR" ] || fail_upgrade "Cannot find CURRENT PKI KEY_DIR: $KEY_DIR"
@@ -1813,8 +1811,9 @@ backup_current_pki ()
 	cp -r "$KEY_DIR" "$EASYRSA_SAFE_PKI" \
 		|| fail_upgrade "Failed to copy $KEY_DIR to $EASYRSA_SAFE_PKI"
 
-	cp "$EASYRSA_OLD_VARS" "$EASYRSA_SAFE_PKI" \
-		|| fail_upgrade "Failed to copy $EASYRSA_OLD_VARS to EASYRSA_SAFE_PKI"
+	# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
+	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_SAFE_PKI" \
+		|| fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
 
 	printf "%s\n" "  OK"
 	printf "%s\n" "  Current PKI backup created in: $EASYRSA_SAFE_PKI"
@@ -1928,7 +1927,7 @@ build_v3_vars ()
 " > "$EASYRSA_VARSV3_WRN" || fail_upgrade "Failed to create $EASYRSA_VARSV3_WRN"
 
 	# Found this file already and verified it as vars or vars.bat
-	[ -f "$EASYRSA_OLD_VARS" ] || fail_upgrade "Failed to find $EASYRSA_OLD_VARS"
+	[ -f "$EASYRSA_VER2_VARSFILE" ] || fail_upgrade "Failed to find $EASYRSA_VER2_VARSFILE"
 
 	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
 	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "Failed to find $EASYRSA_VARSV3_EXMP"
@@ -1936,7 +1935,7 @@ build_v3_vars ()
 #	# Select live lines only
 #	grep -vE '^#|^$|^printf "%s\n"' "$EASYRSA_VER2_VARSFILE" > "$EASYRSA_VARSV2_TMP" \
 #		|| fail_upgrade "Failed to create $EASYRSA_VARSV2_TMP"
-#	cat "$EASYRSA_OLD_VARS"
+#	cat "$EASYRSA_VER2_VARSFILE"
 #	# shellcheck disable=SC2016
 #
 #	{
@@ -1954,37 +1953,37 @@ build_v3_vars ()
 
 
 	EASYRSA_VARS_TEMP1=" KEY_SIZE="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_SIZE $EASYRSA_VARS_TEMP3" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_COUNTRY="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_COUNTRY \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_PROVINCE="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_PROVINCE \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_CITY="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_CITY \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_ORG="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_ORG \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_EMAIL="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_EMAIL \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	EASYRSA_VARS_TEMP1=" KEY_OU="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_OLD_VARS")"
+	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
 	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
 	printf "%s\n" "set_var EASYRSA_KEY_OU \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
@@ -2000,10 +1999,11 @@ build_v3_vars ()
 
 	# This file must be created and restored at the end of TEST
 	# for the REAL update to to succeed
-	cp "$EASYRSA_OLD_VARS" "$EASYRSA/vars.livebackup" \
-		|| fail_upgrade "Failed to create $EASYRSA/vars.livebackup"
+	EASYRSA_VARS_LIVEBKP="$EASYRSA/vars.livebackup"
+	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP" \
+		|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
 
-	# Copy vars-v3.new to vars
+	# Copy vars-v3.new to vars, nanme is explicit because original name could be vars.bat
 	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA/vars" \
 		|| fail_upgrade "Failed to copy $EASYRSA_VARSV3_NEW to $EASYRSA/vars"
 
@@ -2015,14 +2015,6 @@ build_v3_vars ()
 
 do_upgrade_23 ()
 {
-
-	set -e
-
-	# Unux: ./vars
-	# Windows: ./vars.bat
-	[ $EASYRSA_IS_VER2 ] && EASYRSA_VER2_VARSFILE="$vars"
-	[ $EASYRSA_IS_WIN2 ] && EASYRSA_WIN2_VARSFILE="$EASYRSA/vars.bat"
-
 	printf "\n\n%s\n" "Begin **$EASYRSA_UPGRADE_TYPE** upgrade process .."
 
 	verify_new_pki
@@ -2038,31 +2030,37 @@ do_upgrade_23 ()
 
 * NOTICE *
 
-**$EASYRSA_UPGRADE_TYPE**
-
 EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 "
 
 	if [ "$NOSAVE" -eq 1 ] && [ -d "$EASYRSA_NEW_PKI" ] && [ -d "$EASYRSA_SAFE_PKI" ]; then
-		cp "$EASYRSA/vars.livebackup" "$EASYRSA_OLD_VARS"
+		# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
+		# Need this dance because v2 vars is same name as v3 vars
+		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
+		rm -f "$EASYRSA_VARS_LIVEBKP"
+		# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
 		rm -rf "$EASYRSA_NEW_PKI"
 		rm -rf "$EASYRSA_SAFE_PKI"
-		rm -f  "$EASYRSA/vars"
-		#printf "\n%s\n" "*** NOTICE: $EASYRSA_UPGRADE_TYPE upgrade completed, temporary dirs/files deleted ***"
+		# EASYRSA/vars is always the new created v3 vars
+		rm "$EASYRSA/vars"  || fail_upgrade "Failed to remove temporary new vars file: $EASYRSA/vars"
 	else
-		rm -f "$EASYRSA_OLD_VARS" "$EASYRSA/vars.livebackup"
+		rm -f "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP"
 	fi
 }
 
 manage_upgrade_23 ()
 {
+
+[ "$EASYRSA_VARS_IS_VER3" ] && return
+[ -z "$EASYRSA" ] && fail_upgrade "EASYRSA dir not defined: $EASYRSA :"
+
 	warn "\
 * WARNING!!! *
 
 Found settings from EasyRSA-v2 which are not compatible with EasyRSA-v3.
 Before you can continue, EasyRSA must upgrade your settings and PKI.
- * EASYRSA: ^ $EASYRSA ^
- * Found vars: $vars
+ * EASYRSA   : $EASYRSA :
+ * Found vars: $EASYRSA_VER2_VARSFILE :
 
 These CHECKS will be made if you upgrade now:
 Before ANY changes are made a test run will be attempted ...
@@ -2143,7 +2141,7 @@ printf "EasyRSA upgrade **%s** has successfully completed.
 
   PLEASE READ THE INSTRUCTIONS ABOVE
 
-PROGRAM TERMINATED CLEANLY
+UPGRADE TERMINATED CLEANLY
 " "$EASYRSA_UPGRADE_TYPE"
 
 exit 9
@@ -2245,8 +2243,6 @@ subjectAltName = $val" ;;
 	shift
 done
 
-
-
 # Intelligent env-var detection and auto-loading:
 vars_setup
 
@@ -2261,8 +2257,7 @@ trap "exit 6" 6
 trap "exit 14" 15
 
 # If vars is version 2 then offer upgrade: EasyRSA v2.x -> EasyRSA v3.x
-verify_vars_version
-[ $EASYRSA_IS_VER3 ] || manage_upgrade_23
+manage_upgrade_23
 
 # determine how we were called, then hand off to the function responsible
 cmd="$1"
