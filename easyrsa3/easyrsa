@@ -2062,7 +2062,7 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 	rm -f "$EASYRSA_VARS_LIVEBKP"
 }
 
-verify_easyrsa_valid ()
+verify_easyrsa_upgrade_valid ()
 {
 	# if ANY of these conditions are met return to easyrsa and abort upgrade
 	[ "$EASYRSA_VARS_IS_VER3" ]  && return 1
