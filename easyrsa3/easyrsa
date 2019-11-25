@@ -2009,6 +2009,7 @@ build_v3_vars ()
 	EASYRSA_VARS_LIVEBKP="$EASYRSA/vars.livebackup"
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP" \
 		|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
+	rm -f "$EASYRSA_VER2_VARSFILE"
 
 	# Copy vars-v3.new to vars, nanme is explicit because original name could be vars.bat
 	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA/vars" \
@@ -2018,22 +2019,6 @@ build_v3_vars ()
 
 	printf "%s\n" "  OK"
 	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
-}
-
-reset_test_ugrade ()
-{
-	# Must stay in this order
-	# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
-		rm -rf "$EASYRSA_NEW_PKI"
-		rm -rf "$EASYRSA_SAFE_PKI"
-	# EASYRSA_TARGET_VARSFILE is always the new created v3 vars
-	# Need to know if this fails
-		rm "$EASYRSA_TARGET_VARSFILE" \
-			|| fail_upgrade "Failed to remove temporary new vars file: $EASYRSA_TARGET_VARSFILE"
-	# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
-	# Need this dance because v2 vars is same name as v3 vars above
-		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
-		rm -f "$EASYRSA_VARS_LIVEBKP"
 }
 
 do_upgrade_23 ()
@@ -2056,12 +2041,22 @@ do_upgrade_23 ()
 EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 "
 
-	if [ "$NOSAVE" -eq 1 ] && [ -d "$EASYRSA_NEW_PKI" ] && [ -d "$EASYRSA_SAFE_PKI" ]
+	if [ "$NOSAVE" -eq 1 ]
 	then
-		reset_test_ugrade
-	else
-		rm -f "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP"
+		#reset_test_ugrade
+		# Must stay in this order
+		# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
+		rm -rf "$EASYRSA_NEW_PKI"
+		rm -rf "$EASYRSA_SAFE_PKI"
+		# EASYRSA_TARGET_VARSFILE is always the new created v3 vars
+		# Need to know if this fails
+		rm "$EASYRSA_TARGET_VARSFILE" \
+			|| fail_upgrade "Failed to remove temporary new vars file: $EASYRSA_TARGET_VARSFILE"
+		# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
+		# Need this dance because v2 vars is same name as v3 vars above
+		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
 	fi
+	rm -f "$EASYRSA_VARS_LIVEBKP"
 }
 
 manage_upgrade_23 ()
