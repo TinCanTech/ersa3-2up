@@ -1995,6 +1995,7 @@ build_v3_vars ()
 	printf "%s\n" "set_var EASYRSA_KEY_OU \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
 
 	printf "%s\n" 'set_var EASYRSA_NS_SUPPORT "yes"' >> "$EASYRSA_VARSV3_TMP"
+	printf "%s\n" 'set_var EASYRSA_DN "org"' >> "$EASYRSA_VARSV3_TMP"
 
 	# shellcheck disable=SC2016
 	#sed -i 's`\="`\ "`g' "$EASYRSA_VARSV3_TMP"
@@ -2011,7 +2012,7 @@ build_v3_vars ()
 		|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
 	rm -f "$EASYRSA_VER2_VARSFILE"
 
-	# Copy vars-v3.new to vars, nanme is explicit because original name could be vars.bat
+	# Copy vars-v3.new to vars, name is explicit because original name could be vars.bat
 	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA/vars" \
 		|| fail_upgrade "Failed to copy $EASYRSA_VARSV3_NEW to $EASYRSA/vars"
 
