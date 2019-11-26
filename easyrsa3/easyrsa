@@ -1558,6 +1558,10 @@ vars_setup() {
 	prog_file2="$(which -- "$prog_file" 2>/dev/null)" && prog_file="$prog_file2"
 	prog_file2="$(readlink -f "$prog_file" 2>/dev/null)" && prog_file="$prog_file2"
 	prog_dir="${prog_file%/*}"
+
+	# Windows note: prog_dir & EASYRSA is only ever set to '.'
+	[ "$prog_dir" = "." ] && prog_dir="$(pwd)"
+
 	prog_vars="${prog_dir}/vars"
 	# set up PKI path
 	pki_vars="${EASYRSA_PKI:-$PWD/pki}/vars"
