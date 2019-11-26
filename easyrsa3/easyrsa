@@ -1753,7 +1753,7 @@ If you find this warning at the top of the ./vars file then it is safe to remove
   ###                                                     ###
   ########################++++++++++#########################
 
-Please veiw the help above.
+Please view the help above.
 
 Easyrsa3 upgrade FAILED
 ----------------------------------------------------------------------------
@@ -1766,12 +1766,12 @@ verify_new_pki ()
 {
 	printf "%s" "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
-	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI PKI: $EASYRSA_NEW_PKI"
+	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI: $EASYRSA_NEW_PKI"
 	printf "%s\n" "  OK"
 
 	printf "%s" "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
-	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI PKI: $EASYRSA_SAFE_PKI"
+	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI: $EASYRSA_SAFE_PKI"
 	printf "%s\n" "  OK"
 } #=> verify_new_pki
 
@@ -1799,6 +1799,7 @@ verify_current_pki ()
 
 verify_current_ca ()
 {
+	#  TODO: ./easyrsa show-ca here ...
 	printf "%s" "> Find CA .."
 	[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current current ca.crt file: $KEY_DIR/ca.crt"
 	printf "%s\n" "  OK"
@@ -1836,17 +1837,65 @@ create_new_pki ()
 	printf "%s\n" "  OK"
 
 	printf "%s" "> Copy database to NEW PKI .."
-	for i in index.txt index.txt.attr index.txt.old serial serial.old ca.crt; do
+	for i in index.txt index.txt.attr serial serial.old ca.crt; do
+		# Failure for these is not optional
+		# DO NOT DELETE - Files ignored: index.txt.old
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 			|| fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
 	printf "%s\n" "  OK"
 
-	printf "%s" "> Copy .csr .pem .crt .key files to NEW PKI .."
-	cp "$KEY_DIR/"*".csr" "$EASYRSA_PKI/reqs" || fail_upgrade "Failed to copy .csr"
-	cp "$KEY_DIR/"*".pem" "$EASYRSA_PKI/certs_by_serial" || fail_upgrade "Failed to copy .pem"
-	cp "$KEY_DIR/"*".crt" "$EASYRSA_PKI/issued" || fail_upgrade "Failed to copy .crt"
-	cp "$KEY_DIR/"*".key" "$EASYRSA_PKI/private" || fail_upgrade "Failed to copy .key"
+
+for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private"; do
+
+	FILE_EXT="${i%%.*}"
+	DEST_DIR="${i##*.}"
+
+	if ls "$KEY_DIR/"*".$FILE_EXT" 1>/dev/null; then
+		cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
+	else
+		printf "%s\n" "Note: No .$FILE_EXT files found"
+	fi
+
+
+
+
+#	# TODO: .p7 files -- need to check
+#	printf "%s" "> Copy .csr .pem .crt .key .p12 files to NEW PKI .."
+#
+#	if ls "$KEY_DIR/"*".csr" 1>/dev/null; then
+#		cp "$KEY_DIR/"*".csr" "$EASYRSA_PKI/reqs" || fail_upgrade "Failed to copy .csr"
+#	else
+#		printf "%s\n" "Note: No .p12 files found"
+#	fi
+#
+#	if ls "$KEY_DIR/"*".pem" 1>/dev/null; then
+#		cp "$KEY_DIR/"*".pem" "$EASYRSA_PKI/certs_by_serial" || fail_upgrade "Failed to copy .pem"
+#	else
+#		printf "%s\n" "Note: No .p12 files found"
+#	fi
+#
+#	if ls "$KEY_DIR/"*".crt" 1>/dev/null; then
+#		cp "$KEY_DIR/"*".crt" "$EASYRSA_PKI/issued" || fail_upgrade "Failed to copy .crt"
+#	else
+#		printf "%s\n" "Note: No .p12 files found"
+#	fi
+#
+#	if ls "$KEY_DIR/"*".key" 1>/dev/null; then
+#		cp "$KEY_DIR/"*".key" "$EASYRSA_PKI/private" || fail_upgrade "Failed to copy .key"
+#	else
+#		printf "%s\n" "Note: No .p12 files found"
+#	fi
+#
+#	if ls "$KEY_DIR/"*".p12" 1>/dev/null; then
+#		cp "$KEY_DIR/"*".p12" "$EASYRSA_PKI/private" || fail_upgrade "Failed to copy .p12"
+#	else
+#		printf "%s\n" "Note: No .p12 files found"
+#	fi
+
+done
+#exit 9
+
 	# Todo: CRL - Or generate a new CSR on completion
 	printf "%s\n" "  OK"
 	printf "%s\n" "  New PKI created in: $EASYRSA_PKI"
@@ -1855,12 +1904,12 @@ create_new_pki ()
 create_openssl_cnf ()
 {
 	printf "%s" "> OpenSSL config .."
-			# chicken and egg again ..
-			EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
-			EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
-			[ -f "$EASYRSA_SSL_CNFFILE" ] || fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
-			cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" || fail_upgrade "Failed egg01"
-			easyrsa_openssl makesafeconf
+		# chicken and egg again ..
+		EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
+		EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
+		[ -f "$EASYRSA_SSL_CNFFILE" ] || fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
+		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" || fail_upgrade "Failed egg01"
+		easyrsa_openssl makesafeconf
 	printf "%s\n" "  OK"
 	printf "%s\n" "  New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
 } #=> create_openssl_cnf
@@ -2141,7 +2190,7 @@ printf "%s\n" "
 Your settings and PKI have been successfully upgraded to EasyRSA version 3
 
 A backup of your current PKI is here:
-- $EASYRSA_SAFE_PKI
+  $EASYRSA_SAFE_PKI
 "
 
 printf "%s\n" "
@@ -2149,9 +2198,12 @@ IMPORTANT NOTICE
 
 YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
 
-IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED IN ./vars
-  # This sample is in Windows syntax -- edit it for your path if not using PATH:
-  #set_var EASYRSA_OPENSSL	\"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED 
+IN ./vars
+ 
+    # This sample is in Windows syntax -- edit it for your path if not using PATH:
+    #set_var EASYRSA_OPENSSL	\"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+
 
 Finally, you can verify that easyrsa works by using these two commands:
   ./easyrsa show-ca (Verify that your CA is intact and correct)
