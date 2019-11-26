@@ -2021,9 +2021,6 @@ build_v3_vars ()
 	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
 }
 
-verify_easyrsa
-
-
 do_upgrade_23 ()
 {
 	printf "\n\n%s\n" "Begin **$EASYRSA_UPGRADE_TYPE** upgrade process .."
