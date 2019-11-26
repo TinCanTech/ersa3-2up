@@ -1875,6 +1875,8 @@ move_easyrsa2_programs ()
 		 pkitool revoke-full sign-req whichopensslcnf build-ca-pass \
 		 build-key-server-pass init-config; do
 
+		# Although unlikely, both versions of these files could exist, test for both.
+		# EG: ./build-ca and ./build-ca.bat
 		NIX_FILE="$EASYRSA/$i"
 		WIN_FILE="$EASYRSA/$i.bat"
 		if [ -f "$NIX_FILE" ]
@@ -1882,12 +1884,16 @@ move_easyrsa2_programs ()
 			cp "$NIX_FILE" "$EASYRSA_SAFE_PKI" \
 				|| fail_upgrade "Failed to copy $NIX_FILE $EASYRSA_SAFE_PKI"
 			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$NIX_FILE"
-		elif [ -f "$WIN_FILE" ]
+		fi
+
+		if [ -f "$WIN_FILE" ]
 		then
 			cp "$WIN_FILE" "$EASYRSA_SAFE_PKI" \
 				|| fail_upgrade "Failed to copy $WIN_FILE $EASYRSA_SAFE_PKI"
 			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$WIN_FILE"
-		else
+		fi
+
+		if [ ! -f "$NIX_FILE" ] && [ ! -f "$WIN_FILE" ]
 			printf "%s\n" "  File does not exist, ignoring: $i"
 		fi
 	done
