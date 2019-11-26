@@ -1883,19 +1883,20 @@ move_easyrsa2_programs ()
 		then
 			cp "$NIX_FILE" "$EASYRSA_SAFE_PKI" \
 				|| fail_upgrade "Failed to copy $NIX_FILE $EASYRSA_SAFE_PKI"
-			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$NIX_FILE"
 		fi
 
 		if [ -f "$WIN_FILE" ]
 		then
 			cp "$WIN_FILE" "$EASYRSA_SAFE_PKI" \
 				|| fail_upgrade "Failed to copy $WIN_FILE $EASYRSA_SAFE_PKI"
-			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$WIN_FILE"
 		fi
 
 		if [ ! -f "$NIX_FILE" ] && [ ! -f "$WIN_FILE" ]
+		then
 			printf "%s\n" "  File does not exist, ignoring: $i"
 		fi
+
+		[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm -f "$NIX_FILE" "$WIN_FILE"
 	done
 
 	for i in openssl-0.9.6.cnf openssl-0.9.8.cnf openssl-1.0.0.cnf openssl.cnf README.txt \
