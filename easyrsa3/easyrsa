@@ -2062,8 +2062,9 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 verify_easyrsa_upgrade_valid ()
 {
 	# if ANY of these conditions are met return to easyrsa and abort upgrade
-	[ "$EASYRSA_VARS_IS_VER3" ]  && return 1
-	[ -z "$EASYRSA" ]  && return 1
+	[ "$EASYRSA_VARS_IS_VER3" ] && return 1
+	[ -z "$EASYRSA" ] && return 1
+	return 0
 }
 
 manage_upgrade_23 ()
