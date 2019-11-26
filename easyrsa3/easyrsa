@@ -1873,7 +1873,7 @@ move_easyrsa2_programs ()
 	for i in build-ca build-dh build-inter build-key build-key-pass build-key-pkcs12 \
 		 build-key-server build-req build-req-pass clean-all inherit-inter list-crl \
 		 pkitool revoke-full sign-req whichopensslcnf build-ca-pass \
-		 build-key-server-pass init-config; do
+		 build-key-server-pass init-config make-crl revoke-crt; do
 
 		# Although unlikely, both versions of these files could exist, test for both.
 		# EG: ./build-ca and ./build-ca.bat
