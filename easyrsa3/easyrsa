@@ -1939,71 +1939,60 @@ build_v3_vars ()
 	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
 	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "Failed to find $EASYRSA_VARSV3_EXMP"
 
-#	# Select live lines only
-#	grep -vE '^#|^$|^printf "%s\n"' "$EASYRSA_VER2_VARSFILE" > "$EASYRSA_VARSV2_TMP" \
-#		|| fail_upgrade "Failed to create $EASYRSA_VARSV2_TMP"
-#	cat "$EASYRSA_VER2_VARSFILE"
-#	# shellcheck disable=SC2016
-#
-#	{
-#		grep 'KEY_SIZE='  "$EASYRSA_VARSV2_TMP" | sed 's`export KEY_SIZE=`set_var EASYRSA_KEY_SIZE `g'
-#		printf "%s\n" 'set_var EASYRSA_DN "org"'
-#		grep '_COUNTRY='  "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		grep '_PROVINCE=' "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		grep '_CITY='     "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		grep '_ORG='      "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		grep '_EMAIL='    "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		grep '_OU='       "$EASYRSA_VARSV2_TMP" | sed 's`export KEY`set_var EASYRSA_REQ`g'
-#		printf "%s\n" 'set_var EASYRSA_NS_SUPPORT "yes"'
-#	} > "$EASYRSA_VARSV3_TMP" || fail_upgrade "Failed to create $EASYRSA_VARSV3_TMP"
+	# Select live lines only
+	if [ $EASYRSA_VARS_IS_VER2 ]
+	then
+		grep -v '^#' "$EASYRSA_VER2_VARSFILE" > "$EASYRSA_VARSV2_TMP"
+	elif [ $EASYRSA_VARS_IS_WIN2 ]
+	then
+		grep -v '^rem' "$EASYRSA_VER2_VARSFILE" | grep -v '^FOR' | grep -v '^@' > "$EASYRSA_VARSV2_TMP"
+	else
+		fail_upgrade "Unexpected vars file version"
+	fi
 
+	{
+		EASYRSA_VARS_TEMP1=" KEY_SIZE="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_SIZE $EASYRSA_VARS_TEMP3"
 
+		EASYRSA_VARS_TEMP1=" KEY_COUNTRY="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_COUNTRY \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_SIZE="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_SIZE $EASYRSA_VARS_TEMP3" >> "$EASYRSA_VARSV3_TMP"
+		EASYRSA_VARS_TEMP1=" KEY_PROVINCE="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_PROVINCE \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_COUNTRY="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_COUNTRY \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
+		EASYRSA_VARS_TEMP1=" KEY_CITY="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_CITY \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_PROVINCE="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_PROVINCE \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
+		EASYRSA_VARS_TEMP1=" KEY_ORG="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_ORG \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_CITY="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_CITY \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
+		EASYRSA_VARS_TEMP1=" KEY_EMAIL="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_EMAIL \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_ORG="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_ORG \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
+		EASYRSA_VARS_TEMP1=" KEY_OU="
+		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
+		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
+		printf "%s\n" "set_var EASYRSA_KEY_OU \"$EASYRSA_VARS_TEMP3\""
 
-	EASYRSA_VARS_TEMP1=" KEY_EMAIL="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_EMAIL \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
-
-	EASYRSA_VARS_TEMP1=" KEY_OU="
-	EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VER2_VARSFILE")"
-	EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
-	printf "%s\n" "set_var EASYRSA_KEY_OU \"$EASYRSA_VARS_TEMP3\"" >> "$EASYRSA_VARSV3_TMP"
-
-	printf "%s\n" 'set_var EASYRSA_NS_SUPPORT "yes"' >> "$EASYRSA_VARSV3_TMP"
-	printf "%s\n" 'set_var EASYRSA_DN "org"' >> "$EASYRSA_VARSV3_TMP"
-
-	# shellcheck disable=SC2016
-	#sed -i 's`\="`\ "`g' "$EASYRSA_VARSV3_TMP"
+		printf "%s\n" 'set_var EASYRSA_NS_SUPPORT "yes"'
+		printf "%s\n" 'set_var EASYRSA_DN "org"'
+		printf "%s\n" 'set_var EASYRSA_RAND_SN "no"'
+	} > "$EASYRSA_VARSV3_TMP" || fail_upgrade "Failed to create $EASYRSA_VARSV3_TMP"
 
 	cat "$EASYRSA_VARSV3_WRN" "$EASYRSA_VARSV3_EXMP" "$EASYRSA_VARSV3_TMP" > "$EASYRSA_VARSV3_NEW" \
 		|| fail_upgrade "Failed to create $EASYRSA_VARSV3_NEW"
-
-	rm -f "$EASYRSA_VARSV3_WRN" "$EASYRSA_VARSV3_TMP"
 
 	# This file must be created and restored at the end of TEST
 	# for the REAL update to to succeed
