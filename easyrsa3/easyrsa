@@ -1712,7 +1712,7 @@ verify_vars_version ()
 	# Must be EasyRSA v3
 	EASYRSA_VARS_IS_VER3=1
 
-} # => verify_vars_version ()
+} #=> verify_vars_version ()
 
 fail_upgrade ()
 {
@@ -1858,7 +1858,7 @@ create_openssl_cnf ()
 			cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" || fail_upgrade "Failed egg01"
 	printf "%s\n" "  OK"
 	printf "%s\n" "  New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
-}
+} #=> create_openssl_cnf
 
 move_easyrsa2_programs ()
 {
@@ -1903,7 +1903,7 @@ move_easyrsa2_programs ()
 	printf "%s\n" "  OK"
 	# These files are not removed on TEST run
 	printf "%s\n" "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
-}
+} #=> move_easyrsa2_programs
 
 build_v3_vars ()
 {
@@ -2009,7 +2009,7 @@ build_v3_vars ()
 
 	printf "%s\n" "  OK"
 	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
-}
+} #=> build_v3_vars
 
 do_upgrade_23 ()
 {
@@ -2047,7 +2047,7 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
 	fi
 	rm -f "$EASYRSA_VARS_LIVEBKP"
-}
+} #= do_upgrade_23
 
 verify_easyrsa_upgrade_valid ()
 {
@@ -2055,7 +2055,7 @@ verify_easyrsa_upgrade_valid ()
 	[ "$EASYRSA_VARS_IS_VER3" ] && return 1
 	[ -z "$EASYRSA" ] && return 1
 	return 0
-}
+} #=> verify_easyrsa_upgrade_valid
 
 manage_upgrade_23 ()
 {
