@@ -1846,7 +1846,7 @@ create_new_pki ()
 	printf "%s\n" "  OK"
 
 
-for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private"; do
+for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private" "p8.private; do
 
 	FILE_EXT="${i%%.*}"
 	DEST_DIR="${i##*.}"
