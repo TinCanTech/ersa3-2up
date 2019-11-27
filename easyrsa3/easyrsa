@@ -1809,27 +1809,23 @@ verify_current_pki ()
 
 verify_current_ca ()
 {
-	if [ "$CURRENT_CA_IS_VERIFIED" ]
-	then
-		return 0
-	else
-		#  TODO: ./easyrsa show-ca here ...
-		verbose "> Find CA .."
-		[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current current ca.crt file: $KEY_DIR/ca.crt"
-		verbose "OK"
-		in_file="$KEY_DIR/ca.crt"
-		format="x509"
-		opts="-certopt no_pubkey,no_sigdump"
-		printf "%s\n" "========================================================================="
-		easyrsa_openssl $format -in "$in_file" -noout -text\
-			-nameopt multiline $opts || die "\
-		OpenSSL failure to process the input"
-		printf "%s\n" "========================================================================="
-		confirm "* Confirm CA shown above is the correct CA: " "yes" "* Found CA shown above at:
+	#  TODO: ./easyrsa show-ca here ...
+	verbose "> Find CA .."
+	[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current current ca.crt file: $KEY_DIR/ca.crt"
+	verbose "OK"
+	[ "$CURRENT_CA_IS_VERIFIED" ] && return 0
+	in_file="$KEY_DIR/ca.crt"
+	format="x509"
+	opts="-certopt no_pubkey,no_sigdump"
+	printf "%s\n" "========================================================================="
+	easyrsa_openssl $format -in "$in_file" -noout -text\
+		-nameopt multiline $opts || die "\
+	OpenSSL failure to process the input"
+	printf "%s\n" "========================================================================="
+	confirm "* Confirm CA shown above is the correct CA: " "yes" "* Found CA shown above at:
   $KEY_DIR/ca.crt
 "
 	CURRENT_CA_IS_VERIFIED="$in_file"
-	fi
 } #=> verify_current_ca
 
 backup_current_pki ()
