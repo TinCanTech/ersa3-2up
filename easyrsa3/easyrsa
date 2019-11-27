@@ -1813,9 +1813,15 @@ verify_current_ca ()
 	verbose "> Find CA .."
 	[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current current ca.crt file: $KEY_DIR/ca.crt"
 	verbose "OK"
-	confirm "* Confirm CA shown above is the correct CA: " "yes" "
-
-* Found CA at:
+	in_file="$KEY_DIR/ca.crt"
+	format="x509"
+	opts="-certopt no_pubkey,no_sigdump"
+	printf "%s\n" "========================================================================="
+	easyrsa_openssl $format -in "$in_file" -noout -text\
+		-nameopt multiline $opts || die "\
+	OpenSSL failure to process the input"
+	printf "%s\n" "========================================================================="
+	confirm "* Confirm CA shown above is the correct CA: " "yes" "* Found CA shown above at:
   $KEY_DIR/ca.crt
 "
 } #=> verify_current_ca
