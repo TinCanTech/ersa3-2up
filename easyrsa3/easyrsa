@@ -1730,7 +1730,7 @@ ERROR: %s
 ----------------------------------------------------------------------------
 " "$1"
 
-	printf "
+	notice "
 The update has failed but NOTHING has been lost.
 
 First you must correct the ERROR reported above.
@@ -1765,22 +1765,29 @@ Easyrsa3 upgrade FAILED
 	exit 9
 } #=> fail_upgrade
 
+verbose ()
+{
+	[ $VERBOSE ] || return 0
+	printf "%s\n" "$1"
+}
+
+
 verify_new_pki ()
 {
-	printf "%s" "> Verify DEFAULT NEW PKI does not exist .."
+	verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
 	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI: $EASYRSA_NEW_PKI"
-	printf "%s\n" "  OK"
+	verbose "OK"
 
-	printf "%s" "> Verify VERY-SAFE-PKI does not exist .."
+	verbose "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
 	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI: $EASYRSA_SAFE_PKI"
-	printf "%s\n" "  OK"
+	verbose "OK"
 } #=> verify_new_pki
 
 verify_current_pki ()
 {
-	printf "%s" "> Find CURRENT PKI vars .."
+	verbose "> Find CURRENT PKI vars .."
 
 	if [ "$EASYRSA_VARS_IS_VER2" ]
 	then
@@ -1797,24 +1804,25 @@ verify_current_pki ()
 
 	[ -d "$KEY_DIR" ] || fail_upgrade "Cannot find CURRENT PKI KEY_DIR: $KEY_DIR"
 
-	printf "%s\n" "  OK"
+	verbose "OK"
 } #=> verify_current_pki
 
 verify_current_ca ()
 {
 	#  TODO: ./easyrsa show-ca here ...
-	printf "%s" "> Find CA .."
+	verbose "> Find CA .."
 	[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current current ca.crt file: $KEY_DIR/ca.crt"
-	printf "%s\n" "  OK"
-	#printf "%s\n" ""
-	confirm "Confirm CA shown above is the correct CA: " "yes" "
-> Found CA at: $KEY_DIR/ca.crt"
-	printf "%s\n" ""
+	verbose "OK"
+	confirm "* Confirm CA shown above is the correct CA: " "yes" "
+
+* Found CA at:
+  $KEY_DIR/ca.crt
+"
 } #=> verify_current_ca
 
 backup_current_pki ()
 {
-	printf "%s" "> Backup current PKI .."
+	verbose "> Backup current PKI .."
 
 	mkdir -p "$EASYRSA_SAFE_PKI" \
 		|| fail_upgrade "Failed to create safe PKI dir: $EASYRSA_SAFE_PKI"
@@ -1826,28 +1834,28 @@ backup_current_pki ()
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_SAFE_PKI" \
 		|| fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
 
-	printf "%s\n" "  OK"
-	printf "%s\n" "  Current PKI backup created in: $EASYRSA_SAFE_PKI"
+	verbose "OK"
+	verbose "Current PKI backup created in: $EASYRSA_SAFE_PKI"
 } #=> backup_current_pki
 
 create_new_pki ()
 {
 	# Dirs: renewed and revoked are created when used.
-	printf "%s" "> Create NEW PKI dirs .."
+	verbose "> Create NEW PKI dirs .."
 	for i in private reqs issued certs_by_serial; do
 		mkdir -p "$EASYRSA_PKI/$i" \
 			|| fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
 	done
-	printf "%s\n" "  OK"
+	verbose "OK"
 
-	printf "%s" "> Copy database to NEW PKI .."
+	verbose "> Copy database to NEW PKI .."
 	for i in index.txt index.txt.attr serial serial.old ca.crt; do
 		# Failure for these is not optional
 		# DO NOT DELETE - Files ignored: index.txt.old
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 			|| fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
-	printf "%s\n" "  OK"
+	verbose "OK"
 
 
 for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private" "p8.private"; do
@@ -1858,7 +1866,7 @@ for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.privat
 	if ls "$KEY_DIR/"*".$FILE_EXT" > /dev/null 2>&1; then
 		cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
 	else
-		printf "%s\n" "Note: No .$FILE_EXT files found"
+		verbose "Note: No .$FILE_EXT files found"
 	fi
 
 
@@ -1901,28 +1909,27 @@ done
 #exit 9
 
 	# Todo: CRL - Or generate a new CSR on completion
-	printf "%s\n" "  OK"
-	printf "%s\n" "  New PKI created in: $EASYRSA_PKI"
+	verbose "OK"
+	verbose "New PKI created in: $EASYRSA_PKI"
 } #=> create_new_pki
 
 create_openssl_cnf ()
 {
-	printf "%s" "> OpenSSL config .."
+	verbose "> OpenSSL config .."
 		# chicken and egg again ..
 		EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
 		EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
 		[ -f "$EASYRSA_SSL_CNFFILE" ] || fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
 		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" || fail_upgrade "Failed egg01"
 		easyrsa_openssl makesafeconf
-	printf "%s\n" "  OK"
-	printf "%s\n" "  New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
+	verbose "OK"
+	verbose "New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
 } #=> create_openssl_cnf
 
 move_easyrsa2_programs ()
 {
 	# These files may not exist here
-	#printf "%s\n" ""
-	printf "%s\n" "> Move easyrsa2 programs to SAFE PKI .."
+	verbose "> Move easyrsa2 programs to SAFE PKI .."
 	for i in build-ca build-dh build-inter build-key build-key-pass build-key-pkcs12 \
 		 build-key-server build-req build-req-pass clean-all inherit-inter list-crl \
 		 pkitool revoke-full sign-req whichopensslcnf build-ca-pass \
@@ -1946,7 +1953,7 @@ move_easyrsa2_programs ()
 
 		if [ ! -f "$NIX_FILE" ] && [ ! -f "$WIN_FILE" ]
 		then
-			printf "%s\n" "  File does not exist, ignoring: $i"
+			verbose "File does not exist, ignoring: $i"
 		fi
 
 		[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm -f "$NIX_FILE" "$WIN_FILE"
@@ -1961,7 +1968,7 @@ move_easyrsa2_programs ()
 				|| fail_upgrade "Failed to copy $EASYRSA/$i $EASYRSA_SAFE_PKI"
 			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$EASYRSA/$i"
 		else
-			printf "%s\n" "  File does not exist, ignoring: $i"
+			verbose "File does not exist, ignoring: $i"
 		fi
 	done
 
@@ -1981,9 +1988,9 @@ move_easyrsa2_programs ()
 	#	fi
 	#done
 
-	printf "%s\n" "  OK"
+	verbose "OK"
 	# These files are not removed on TEST run
-	printf "%s\n" "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
+	verbose "Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
 } #=> move_easyrsa2_programs
 
 build_v3_vars ()
@@ -1992,7 +1999,7 @@ build_v3_vars ()
 	# This only extracts specific values from vars/vars.bat
 	# Reading the source vars/vars.bat file needs more work
 
-	printf "%s" "> Build v3 vars file .."
+	verbose "> Build v3 vars file .."
 
 	EASYRSA_EXT="easyrsa-upgrade-23"
 	EASYRSA_VARSV2_TMP="$EASYRSA/vars-v2.tmp.$EASYRSA_EXT"
@@ -2089,13 +2096,13 @@ build_v3_vars ()
 
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" "$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
-	printf "%s\n" "  OK"
-	printf "%s\n" "  New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
+	verbose "OK"
+	verbose "New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
 } #=> build_v3_vars
 
 do_upgrade_23 ()
 {
-	printf "\n\n%s\n" "Begin **$EASYRSA_UPGRADE_TYPE** upgrade process .."
+	verbose "Begin **$EASYRSA_UPGRADE_TYPE** upgrade process .."
 
 	verify_new_pki
 	verify_current_pki
@@ -2106,12 +2113,6 @@ do_upgrade_23 ()
 	move_easyrsa2_programs
 	build_v3_vars
 
-	printf "%s\n" "
-
-* NOTICE *
-
-EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
-"
 
 	if [ "$NOSAVE" -eq 1 ]
 	then
@@ -2138,84 +2139,81 @@ manage_upgrade_23 ()
 	[ "$EASYRSA" = "." ] && echo "Warning: EASYRSA = $EASYRSA" && return 0
 
 	warn "\
-* WARNING!!! *
+=========================================================================
+
+                           * WARNING *
 
 Found settings from EasyRSA-v2 which are not compatible with EasyRSA-v3.
 Before you can continue, EasyRSA must upgrade your settings and PKI.
  * EASYRSA   : $EASYRSA :
  * Found vars: $EASYRSA_VER2_VARSFILE :
 
-These CHECKS will be made if you upgrade now:
-Before ANY changes are made a test run will be attempted ...
- * Verify: new PKI dir does not exist and will not be over written.
- * Verify: new backup PKI dir does not exist and will not be over written.
- * Verify and Source the current PKI settings: ./vars or ./vars.bat
- * Verify the current ca.crt
+Further info: 
+* https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
+========================================================================="
 
-Then:
- * CONFIRM NOW THAT THIS IS THE CORRECT ca.crt and continue or quit
-
-These CHANGES will be made if you continue:
-Before ANY changes are made a test run will be attempted ...
- * Complete backup of the current PKI to ./VERY-SAFE-PKI
- * Create new PKI dirs for use with EasyRSA-3
- * Copy required working database files to new PKI
- * Copy current PKI to new PKI
- * create new openssl-easyrsa.cnf file
- * Remove EasyRSA-2 program files
- * Build new EasyRSA-3 vars file
-"
 # Test upgrade
 
 		NOSAVE=1
 		EASYRSA_UPGRADE_TYPE="TEST"
 
-		confirm "Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (*No* changes will be written): " "yes" "
-NOTICE
-
-This upgrade will TEST that the upgrade works before making any changes."
+		confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (*No* changes will be written): " "yes" "
+This upgrade will TEST that the upgrade works BEFORE making any changes."
 
 		do_upgrade_23
 
+		notice "
+ =========================================================================
+
+                             * NOTICE *
+
+EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
+"
 # Upgrade for REAL
 
 		NOSAVE=0
 		EASYRSA_UPGRADE_TYPE="REAL"
 
-		confirm "Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
-WARNING!
+		confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (Changes WILL be written):" "yes" "
+=========================================================================
+
+                             * WARNING *
 
 Run REAL upgrade: Answer yes (Once completed you will have a version 3 PKI)
 Terminate upgrade: Answer no (No changes have been made to your current PKI)
 "
-		confirm "Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
-=======================================
-SECOND WARNING!!
+		confirm "* Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
+=========================================================================
+
+                          * SECOND WARNING *
 
 This upgrade will permanently write changes to your PKI !
 (With full backup backout)
-=======================================
+=========================================================================
 "
 		do_upgrade_23
 
-printf "%s\n" "
-==========================================================================
-Your settings and PKI have been successfully upgraded to EasyRSA version 3
+notice "
+=========================================================================
+
+                             * NOTICE *
+
+Your settings and PKI have been successfully upgraded to EasyRSA version3
 
 A backup of your current PKI is here:
   $EASYRSA_SAFE_PKI
 "
 
-printf "%s\n" "
-IMPORTANT NOTICE
+notice "
+                        * IMPORTANT NOTICE *
 
 YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
 
 IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED 
 IN ./vars
  
-    # This sample is in Windows syntax -- edit it for your path if not using PATH:
-    #set_var EASYRSA_OPENSSL	\"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+ # This sample is in Windows syntax -- edit it for your path if not using PATH:
+ #set_var EASYRSA_OPENSSL      \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
 
 
 Finally, you can verify that easyrsa works by using these two commands:
@@ -2223,12 +2221,9 @@ Finally, you can verify that easyrsa works by using these two commands:
   ./easyrsa gen-crl ((re)-generate a CRL file)
 "
 
-printf "EasyRSA upgrade **%s** has successfully completed.
-
-  PLEASE READ THE INSTRUCTIONS ABOVE
-
-UPGRADE TERMINATED CLEANLY
-" "$EASYRSA_UPGRADE_TYPE"
+notice "
+                 * UPGRADE COMPLETED SUCCESSFULLY *
+"
 
 exit 9
 
