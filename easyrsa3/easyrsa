@@ -1961,6 +1961,20 @@ move_easyrsa2_programs ()
 		fi
 	done
 
+	# Hard coded versions
+	for i in 	awk.exe cat.exe cp.exe date.exe diff.exe grep.exe libcrypto-1_1.dll libssl-1_1.dll \
+			ls.exe md5sum.exe mkdir.exe mktemp.exe mv.exe openssl.exe printf.exe rm.exe \
+			sed.exe which.exe; do
+		if [ -f "$EASYRSA/$i" ]
+		then
+			cp "$EASYRSA/$i" "$EASYRSA_SAFE_PKI" \
+				|| fail_upgrade "Failed to copy $EASYRSA/$i $EASYRSA_SAFE_PKI"
+			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$EASYRSA/$i"
+		else
+			printf "%s\n" "  File does not exist, ignoring: $i"
+		fi
+	done
+
 	printf "%s\n" "  OK"
 	# These files are not removed on TEST run
 	printf "%s\n" "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
