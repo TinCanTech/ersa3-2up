@@ -1558,11 +1558,8 @@ vars_setup() {
 	prog_file2="$(which -- "$prog_file" 2>/dev/null)" && prog_file="$prog_file2"
 	prog_file2="$(readlink -f "$prog_file" 2>/dev/null)" && prog_file="$prog_file2"
 	prog_dir="${prog_file%/*}"
-
-	# Windows note: prog_dir & EASYRSA is only ever set to '.'
-	[ "$prog_dir" = "." ] && prog_dir="$(pwd)"
-
 	prog_vars="${prog_dir}/vars"
+
 	# set up PKI path
 	pki_vars="${EASYRSA_PKI:-$PWD/pki}/vars"
 
@@ -1689,25 +1686,31 @@ set_var() {
 
 verify_vars_version ()
 {
-	# vars *is* a found file
+
 	if [ -f "$vars" ]
 	then
 		# Windows has limited options -- Maybe fix this one day
 		# A little housekeeping: DON'T EDIT THIS SECTION
 		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
 		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_VARS_IS_VER3=1 && return 0
+		EASYRSA_VARS_IS_VER2=1
+		EASYRSA_VER2_VARSFILE="$vars"
 		EASYRSA_TARGET_VARSFILE="$vars"
-		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && EASYRSA_VARS_IS_VER2=1 && EASYRSA_VER2_VARSFILE="$vars" && return 0
-		echo "Unexpected vars problem complaining" && exit 9
+		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && return 0
+		echo "Unexpected vars problem *complaining*" 
+		exit 9
 	fi
 
-	# vars is *not* a found file
-	# Only test for vars.bat in `prog_dir` directory
-	# EASYRSA is not defined yet
-	if [ -f "$prog_dir/vars.bat" ]
+	# Only test for vars.bat in `.` directory
+	if [ -f "./vars.bat" ]
 	then
-		EASYRSA_TARGET_VARSFILE="$prog_dir/vars"
-		EASYRSA_VARS_IS_WIN2=1 && EASYRSA_VER2_VARSFILE="$prog_dir/vars.bat" && return 0
+		# Windows note: prog_dir & EASYRSA is only ever set to '.'
+		[ -z "$EASYRSA" ] && EASYRSA="$(pwd)"
+		[ "$EASYRSA" = "." ] && EASYRSA="$(pwd)"
+		EASYRSA_VARS_IS_WIN2=1
+		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
+		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
+		return 0
 	fi
 
 	# vars is not assigned *and* is not Windows vars.bat
@@ -1829,6 +1832,7 @@ backup_current_pki ()
 
 create_new_pki ()
 {
+	# Dirs: renewed and revoked are created when used.
 	printf "%s" "> Create NEW PKI dirs .."
 	for i in private reqs issued certs_by_serial; do
 		mkdir -p "$EASYRSA_PKI/$i" \
@@ -1851,7 +1855,7 @@ for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.privat
 	FILE_EXT="${i%%.*}"
 	DEST_DIR="${i##*.}"
 
-	if ls "$KEY_DIR/"*".$FILE_EXT" 1>/dev/null; then
+	if ls "$KEY_DIR/"*".$FILE_EXT" > /dev/null 2>&1; then
 		cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
 	else
 		printf "%s\n" "Note: No .$FILE_EXT files found"
@@ -2074,19 +2078,19 @@ build_v3_vars ()
 
 	# This file must be created and restored at the end of TEST
 	# for the REAL update to to succeed
-	EASYRSA_VARS_LIVEBKP="$EASYRSA/vars.livebackup"
+	EASYRSA_VARS_LIVEBKP="$EASYRSA_TARGET_VARSFILE.livebackup"
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP" \
 		|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
 	rm -f "$EASYRSA_VER2_VARSFILE"
 
-	# Copy vars-v3.new to vars, name is explicit because original name could be vars.bat
-	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA/vars" \
-		|| fail_upgrade "Failed to copy $EASYRSA_VARSV3_NEW to $EASYRSA/vars"
+	# Copy vars-v3.new to vars, "$EASYRSA_TARGET_VARSFILE" is always $EASYRSA/vars
+	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA_TARGET_VARSFILE" \
+		|| fail_upgrade "Failed to copy $EASYRSA_VARSV3_NEW to $EASYRSA_TARGET_VARSFILE"
 
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" "$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
 	printf "%s\n" "  OK"
-	printf "%s\n" "  New v3 vars file created in: $EASYRSA/vars"
+	printf "%s\n" "  New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
 } #=> build_v3_vars
 
 do_upgrade_23 ()
@@ -2127,18 +2131,11 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 	rm -f "$EASYRSA_VARS_LIVEBKP"
 } #= do_upgrade_23
 
-verify_easyrsa_upgrade_valid ()
-{
-	# if ANY of these conditions are met return to easyrsa and abort upgrade
-	[ "$EASYRSA_VARS_IS_VER3" ] && return 1
-	[ -z "$EASYRSA" ] && return 1
-	return 0
-} #=> verify_easyrsa_upgrade_valid
-
 manage_upgrade_23 ()
 {
-
-verify_easyrsa_upgrade_valid || return 0
+	# if ANY of these conditions are met return to easyrsa and abort upgrade
+	[ "$EASYRSA_VARS_IS_VER3" ] && return 0
+	[ "$EASYRSA" = "." ] && echo "Warning: EASYRSA = $EASYRSA" && return 0
 
 	warn "\
 * WARNING!!! *
