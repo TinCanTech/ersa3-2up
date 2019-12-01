@@ -1898,25 +1898,28 @@ move_easyrsa2_programs ()
 {
 	# These files may not exist here
 	verbose "> Move easyrsa2 programs to SAFE PKI .."
-	for i in build-ca build-dh build-inter build-key build-key-pass build-key-pkcs12 \
-		 build-key-server build-req build-req-pass clean-all inherit-inter list-crl \
-		 pkitool revoke-full sign-req whichopensslcnf build-ca-pass \
-		 build-key-server-pass init-config make-crl revoke-crt; do
-
-		# Although unlikely, both versions of these files could exist, test for both.
+	for i in build-ca build-dh build-inter build-key build-key-pass \
+	build-key-pkcs12 build-key-server build-req build-req-pass \
+	clean-all inherit-inter list-crl pkitool revoke-full sign-req \
+	whichopensslcnf build-ca-pass build-key-server-pass init-config \
+	make-crl revoke-crt openssl-0.9.6.cnf openssl-0.9.8.cnf \
+	openssl-1.0.0.cnf openssl.cnf README.txt index.txt.start \
+	vars.bat.sample serial.start
+	do
+		# Although unlikely, both files could exist
 		# EG: ./build-ca and ./build-ca.bat
 		NIX_FILE="$EASYRSA/$i"
 		WIN_FILE="$EASYRSA/$i.bat"
 		if [ -f "$NIX_FILE" ]
 		then
 			cp "$NIX_FILE" "$EASYRSA_SAFE_PKI" \
-				|| fail_upgrade "Failed to copy $NIX_FILE $EASYRSA_SAFE_PKI"
+			|| fail_upgrade "copy $NIX_FILE $EASYRSA_SAFE_PKI"
 		fi
 
 		if [ -f "$WIN_FILE" ]
 		then
 			cp "$WIN_FILE" "$EASYRSA_SAFE_PKI" \
-				|| fail_upgrade "Failed to copy $WIN_FILE $EASYRSA_SAFE_PKI"
+			|| fail_upgrade "copy $WIN_FILE $EASYRSA_SAFE_PKI"
 		fi
 
 		if [ ! -f "$NIX_FILE" ] && [ ! -f "$WIN_FILE" ]
@@ -1924,20 +1927,7 @@ move_easyrsa2_programs ()
 			verbose "File does not exist, ignoring: $i"
 		fi
 
-		[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm -f "$NIX_FILE" "$WIN_FILE"
-	done
-
-	for i in openssl-0.9.6.cnf openssl-0.9.8.cnf openssl-1.0.0.cnf openssl.cnf README.txt \
-		 index.txt.start vars.bat.sample serial.start; do
-
-		if [ -f "$EASYRSA/$i" ]
-		then
-			cp "$EASYRSA/$i" "$EASYRSA_SAFE_PKI" \
-				|| fail_upgrade "Failed to copy $EASYRSA/$i $EASYRSA_SAFE_PKI"
-			[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$EASYRSA/$i"
-		else
-			verbose "File does not exist, ignoring: $i"
-		fi
+	[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm -f "$NIX_FILE" "$WIN_FILE"
 	done
 
 	verbose "OK"
@@ -2134,7 +2124,7 @@ This upgrade will TEST that the upgrade works BEFORE making any changes."
 	do_upgrade_23
 
 	notice "
- =========================================================================
+=========================================================================
 
                              * NOTICE *
 
