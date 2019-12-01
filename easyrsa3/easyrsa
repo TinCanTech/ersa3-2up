@@ -2045,6 +2045,7 @@ build_v3_vars ()
 	fi
 
 	{
+		# Note: Default KEY_SIZE values: *nix=2048 Win=4096
 		EASYRSA_VARS_TEMP1=" KEY_SIZE="
 		EASYRSA_VARS_TEMP2="$(grep "$EASYRSA_VARS_TEMP1" "$EASYRSA_VARSV2_TMP")"
 		EASYRSA_VARS_TEMP3="${EASYRSA_VARS_TEMP2##*=}"
