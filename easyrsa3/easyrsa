@@ -1559,7 +1559,6 @@ vars_setup() {
 	prog_file2="$(readlink -f "$prog_file" 2>/dev/null)" && prog_file="$prog_file2"
 	prog_dir="${prog_file%/*}"
 	prog_vars="${prog_dir}/vars"
-
 	# set up PKI path
 	pki_vars="${EASYRSA_PKI:-$PWD/pki}/vars"
 
@@ -1682,6 +1681,8 @@ set_var() {
 # --------------------------------------------------------------------------
 #   1. The Openvpn Forum -- Here: https://forums.openvpn.net/viewforum.php?f=31
 #   2. The #easyrsa IRC channel at freenode
+# Further info:
+# * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 # --------------------------------------------------------------------------
 
 verify_vars_version ()
@@ -1694,22 +1695,15 @@ verify_vars_version ()
 		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
 		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_VARS_IS_VER3=1 && return 0
 		EASYRSA_VARS_IS_VER2=1
-		EASYRSA_VER2_VARSFILE="$vars"
-		EASYRSA_TARGET_VARSFILE="$vars"
 		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && return 0
-		echo "Unexpected vars problem *complaining*" 
-		exit 9
+		fail_upgrade "Unexpected vars problem *complaining*"
 	fi
 
 	# Only test for vars.bat in `.` directory
 	if [ -f "./vars.bat" ]
 	then
 		# Windows note: prog_dir & EASYRSA is only ever set to '.'
-		[ -z "$EASYRSA" ] && EASYRSA="$(pwd)"
-		[ "$EASYRSA" = "." ] && EASYRSA="$(pwd)"
 		EASYRSA_VARS_IS_WIN2=1
-		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
-		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
 		return 0
 	fi
 
@@ -1734,6 +1728,10 @@ ERROR: %s
 The update has failed but NOTHING has been lost.
 
 First you must correct the ERROR reported above.
+
+Further info:
+* https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
+
 ============================================================================
 
 Before you can run the update again you MUST remove these two directories:
@@ -2144,9 +2142,24 @@ manage_upgrade_23 ()
 {
 	# if ANY of these conditions are met return to easyrsa and abort upgrade
 	[ "$EASYRSA_VARS_IS_VER3" ] && return 0
-	[ "$EASYRSA" = "." ] && echo "Warning: EASYRSA = $EASYRSA" && return 0
 	# Multiple CA's ..
 	# Other weird shit ..
+
+	# Check which vars/vars.bat to use
+	if [ $EASYRSA_VARS_IS_VER2 ]
+	then
+		EASYRSA_VER2_VARSFILE="$vars"
+		EASYRSA_TARGET_VARSFILE="$vars"
+
+	elif [ $EASYRSA_VARS_IS_WIN2 ]
+	then
+		[ "$EASYRSA" = "." ] && EASYRSA="$(pwd)"
+		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
+		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
+
+	else
+		fail_upgrade "Unknown vars file version"
+	fi
 
 	warn "\
 =========================================================================
@@ -2155,8 +2168,9 @@ manage_upgrade_23 ()
 
 Found settings from EasyRSA-v2 which are not compatible with EasyRSA-v3.
 Before you can continue, EasyRSA must upgrade your settings and PKI.
- * EASYRSA   : $EASYRSA :
- * Found vars: $EASYRSA_VER2_VARSFILE :
+* Found EASYRSA and vars file:
+  $EASYRSA
+  $EASYRSA_VER2_VARSFILE :
 
 Further info: 
 * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
@@ -2164,15 +2178,15 @@ Further info:
 
 # Test upgrade
 
-		NOSAVE=1
-		EASYRSA_UPGRADE_TYPE="TEST"
+	NOSAVE=1
+	EASYRSA_UPGRADE_TYPE="TEST"
 
-		confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (*No* changes will be written): " "yes" "
+	confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (*No* changes will be written): " "yes" "
 This upgrade will TEST that the upgrade works BEFORE making any changes."
 
-		do_upgrade_23
+	do_upgrade_23
 
-		notice "
+	notice "
  =========================================================================
 
                              * NOTICE *
@@ -2181,10 +2195,10 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 "
 # Upgrade for REAL
 
-		NOSAVE=0
-		EASYRSA_UPGRADE_TYPE="REAL"
+	NOSAVE=0
+	EASYRSA_UPGRADE_TYPE="REAL"
 
-		confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (Changes WILL be written):" "yes" "
+	confirm "* EasyRSA **$EASYRSA_UPGRADE_TYPE** upgrade (Changes WILL be written):" "yes" "
 =========================================================================
 
                              * WARNING *
@@ -2192,7 +2206,7 @@ EasyRSA upgrade **$EASYRSA_UPGRADE_TYPE** has successfully completed.
 Run REAL upgrade: Answer yes (Once completed you will have a version 3 PKI)
 Terminate upgrade: Answer no (No changes have been made to your current PKI)
 "
-		confirm "* Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
+	confirm "* Confirm **$EASYRSA_UPGRADE_TYPE** upgrade (Changes will be written):" "yes" "
 =========================================================================
 
                           * SECOND WARNING *
@@ -2201,9 +2215,9 @@ This upgrade will permanently write changes to your PKI !
 (With full backup backout)
 =========================================================================
 "
-		do_upgrade_23
+	do_upgrade_23
 
-notice "
+	notice "
 =========================================================================
 
                              * NOTICE *
@@ -2214,7 +2228,7 @@ A backup of your current PKI is here:
   $EASYRSA_SAFE_PKI
 "
 
-notice "
+	notice "
                         * IMPORTANT NOTICE *
 
 YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
@@ -2231,7 +2245,7 @@ Finally, you can verify that easyrsa works by using these two commands:
   ./easyrsa gen-crl ((re)-generate a CRL file)
 "
 
-notice "
+	notice "
                  * UPGRADE COMPLETED SUCCESSFULLY *
 "
 
