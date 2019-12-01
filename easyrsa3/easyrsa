@@ -1715,12 +1715,11 @@ verify_vars_version ()
 fail_upgrade ()
 {
 	# Replace die()
-	printf "
+	notice "
 ============================================================================
-ERROR: %s
+ERROR: $1
 ----------------------------------------------------------------------------
-" "$1"
-
+"
 	notice "
 The update has failed but NOTHING has been lost.
 
@@ -1733,16 +1732,17 @@ Further info:
 
 Before you can run the update again you MUST remove these two directories:
 
- * %s/pki
- * %s/VERY_SAFE_PKI
+ * $EASYRSA/pki
+ * $EASYRSA/VERY_SAFE_PKI
 
 Or rename them to move them out of the update process way.
 ----------------------------------------------------------------------------
 You may also need to remove the newly created vars file at:
 
-%s/vars
+$EASYRSA/vars
 
-If you find this warning at the top of the ./vars file then it is safe to remove:
+If you find this warning at the top of the ./vars file 
+then it is safe to remove:
 
   ########################++++++++++#########################
   ###                                                     ###
@@ -1755,8 +1755,7 @@ Please view the help above.
 
 Easyrsa3 upgrade FAILED
 ----------------------------------------------------------------------------
-" "$EASYRSA" "$EASYRSA" "$EASYRSA"
-
+"
 	exit 9
 } #=> fail_upgrade
 
