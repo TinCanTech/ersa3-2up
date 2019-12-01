@@ -1863,56 +1863,18 @@ create_new_pki ()
 	done
 	verbose "OK"
 
+	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private" "p8.private"; do
 
-for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private" "p8.private"; do
+		FILE_EXT="${i%%.*}"
+		DEST_DIR="${i##*.}"
 
-	FILE_EXT="${i%%.*}"
-	DEST_DIR="${i##*.}"
+		if ls "$KEY_DIR/"*".$FILE_EXT" > /dev/null 2>&1; then
+			cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
+		else
+			verbose "Note: No .$FILE_EXT files found"
+		fi
 
-	if ls "$KEY_DIR/"*".$FILE_EXT" > /dev/null 2>&1; then
-		cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
-	else
-		verbose "Note: No .$FILE_EXT files found"
-	fi
-
-
-
-
-#	# TODO: .p7 files -- need to check
-#	printf "%s" "> Copy .csr .pem .crt .key .p12 files to NEW PKI .."
-#
-#	if ls "$KEY_DIR/"*".csr" 1>/dev/null; then
-#		cp "$KEY_DIR/"*".csr" "$EASYRSA_PKI/reqs" || fail_upgrade "Failed to copy .csr"
-#	else
-#		printf "%s\n" "Note: No .p12 files found"
-#	fi
-#
-#	if ls "$KEY_DIR/"*".pem" 1>/dev/null; then
-#		cp "$KEY_DIR/"*".pem" "$EASYRSA_PKI/certs_by_serial" || fail_upgrade "Failed to copy .pem"
-#	else
-#		printf "%s\n" "Note: No .p12 files found"
-#	fi
-#
-#	if ls "$KEY_DIR/"*".crt" 1>/dev/null; then
-#		cp "$KEY_DIR/"*".crt" "$EASYRSA_PKI/issued" || fail_upgrade "Failed to copy .crt"
-#	else
-#		printf "%s\n" "Note: No .p12 files found"
-#	fi
-#
-#	if ls "$KEY_DIR/"*".key" 1>/dev/null; then
-#		cp "$KEY_DIR/"*".key" "$EASYRSA_PKI/private" || fail_upgrade "Failed to copy .key"
-#	else
-#		printf "%s\n" "Note: No .p12 files found"
-#	fi
-#
-#	if ls "$KEY_DIR/"*".p12" 1>/dev/null; then
-#		cp "$KEY_DIR/"*".p12" "$EASYRSA_PKI/private" || fail_upgrade "Failed to copy .p12"
-#	else
-#		printf "%s\n" "Note: No .p12 files found"
-#	fi
-
-done
-#exit 9
+	done
 
 	# Todo: CRL - Or generate a new CSR on completion
 	verbose "OK"
@@ -1977,22 +1939,6 @@ move_easyrsa2_programs ()
 			verbose "File does not exist, ignoring: $i"
 		fi
 	done
-
-	# Hard coded versions
-	# These should not be in this directory anyway, so maybe not bother
-	#for i in 	awk.exe cat.exe cp.exe date.exe diff.exe grep.exe libcrypto-1_1.dll libssl-1_1.dll \
-	#		ls.exe md5sum.exe mkdir.exe mktemp.exe mv.exe openssl.exe printf.exe rm.exe \
-	#		sed.exe which.exe; do
-	#	if [ -f "$EASYRSA/$i" ]
-	#	then
-	#		cp "$EASYRSA/$i" "$EASYRSA_SAFE_PKI" \
-	#			|| fail_upgrade "Failed to copy $EASYRSA/$i $EASYRSA_SAFE_PKI"
-	#		# Cannot remove these exes until windows has finished with them
-	#		#[ "$EASYRSA_UPGRADE_TYPE" = "REAL" ] && rm  -f "$EASYRSA/$i"
-	#	else
-	#		printf "%s\n" "  File does not exist, ignoring: $i"
-	#	fi
-	#done
 
 	verbose "OK"
 	# These files are not removed on TEST run
