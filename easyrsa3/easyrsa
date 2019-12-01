@@ -1679,10 +1679,9 @@ set_var() {
 
 # You can report problems on the normal openvpn support channels:
 # --------------------------------------------------------------------------
-#   1. The Openvpn Forum -- Here: https://forums.openvpn.net/viewforum.php?f=31
+#   1. The Openvpn Forum: https://forums.openvpn.net/viewforum.php?f=31
 #   2. The #easyrsa IRC channel at freenode
-# Further info:
-# * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
+#   3. Info: https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 # --------------------------------------------------------------------------
 
 verify_vars_version ()
