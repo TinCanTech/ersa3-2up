@@ -1717,44 +1717,16 @@ fail_upgrade ()
 	# Replace die()
 	notice "
 ============================================================================
-ERROR: $1
-----------------------------------------------------------------------------
-"
-	notice "
 The update has failed but NOTHING has been lost.
 
-First you must correct the ERROR reported above.
+ERROR: $1
+----------------------------------------------------------------------------
 
 Further info:
 * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 
-============================================================================
-
-Before you can run the update again you MUST remove these two directories:
-
- * $EASYRSA/pki
- * $EASYRSA/VERY_SAFE_PKI
-
-Or rename them to move them out of the update process way.
-----------------------------------------------------------------------------
-You may also need to remove the newly created vars file at:
-
-$EASYRSA/vars
-
-If you find this warning at the top of the ./vars file 
-then it is safe to remove:
-
-  ########################++++++++++#########################
-  ###                                                     ###
-  ###  WARNING: THIS FILE WAS AUTOMATICALLY GENERATED     ###
-  ###           ALL SETTINGS ARE AT THE END OF THE FILE   ###
-  ###                                                     ###
-  ########################++++++++++#########################
-
-Please view the help above.
-
 Easyrsa3 upgrade FAILED
-----------------------------------------------------------------------------
+============================================================================
 "
 	exit 9
 } #=> fail_upgrade
@@ -1770,13 +1742,15 @@ verify_new_pki ()
 {
 	verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
-	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI: $EASYRSA_NEW_PKI"
-	verbose "OK"
+	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI:
+* $EASYRSA_NEW_PKI"
+	verbose "> OK"
 
 	verbose "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
-	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI: $EASYRSA_SAFE_PKI"
-	verbose "OK"
+	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI:
+* $EASYRSA_SAFE_PKI"
+	verbose "> OK"
 } #=> verify_new_pki
 
 verify_current_pki ()
