@@ -1686,16 +1686,15 @@ set_var() {
 
 verify_vars_version ()
 {
-
 	if [ -f "$vars" ]
 	then
 		# Windows has limited options -- Maybe fix this one day
 		# A little housekeeping: DON'T EDIT THIS SECTION
-		EASYRSA_TEST_VERSION="$(grep -c 'Complain if a user tries to do this' "$vars")"
-		[ "$EASYRSA_TEST_VERSION" -eq 1 ] && EASYRSA_VARS_IS_VER3=1 && return 0
-		EASYRSA_VARS_IS_VER2=1
-		[ "$EASYRSA_TEST_VERSION" -eq 0 ] && return 0
-		fail_upgrade "Unexpected vars problem *complaining*"
+		case $(grep -c 'Complain if a user tries to do this' "$vars") in
+			1)	EASYRSA_VARS_IS_VER3=1 && return 0 ;;
+			0)	EASYRSA_VARS_IS_VER2=1 && return 0 ;;
+			*)	fail_upgrade "vars problem *complaining*" ;;
+		esac
 	fi
 
 	# Only test for vars.bat in `.` directory
@@ -1711,7 +1710,6 @@ verify_vars_version ()
 	# Hopefully ...
 	# Must be EasyRSA v3
 	EASYRSA_VARS_IS_VER3=1
-
 } #=> verify_vars_version ()
 
 fail_upgrade ()
