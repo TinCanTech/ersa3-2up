@@ -1686,6 +1686,7 @@ set_var() {
 
 verify_vars_version ()
 {
+	# Prefer vars over vars.bat, both should not exist
 	if [ -f "$vars" ]
 	then
 		# Windows has limited options -- Maybe fix this one day
@@ -1733,28 +1734,28 @@ Easyrsa3 upgrade FAILED
 
 verbose ()
 {
-	[ $VERBOSE ] || return 0
+	[ "$VERBOSE" ] || return 0
 	printf "%s\n" "$1"
 }
-
 
 verify_new_pki ()
 {
 	verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
-	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "Cannot over write DEFAULT NEW PKI:
+	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "over write DEFAULT NEW PKI:
 * $EASYRSA_NEW_PKI"
 	verbose "> OK"
 
 	verbose "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
-	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "Cannot over write VERY-SAFE-PKI:
+	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "over write VERY-SAFE-PKI:
 * $EASYRSA_SAFE_PKI"
 	verbose "> OK"
-} #=> verify_new_pki
+} #=> verify_new_pki ()
 
 source_win_vars_bat ()
 {
+	# This can probably be improved
 	EASYRSA_NO_REM="$(grep '^set ' "$EASYRSA_VER2_VARSFILE")"
 
 	# This list may not be complete
@@ -1762,12 +1763,12 @@ source_win_vars_bat ()
 	KEY_CITY KEY_ORG KEY_EMAIL KEY_CN KEY_NAME KEY_OU \
 	PKCS11_MODULE_PATH PKCS11_PIN
 	do
-		UNIQUE_KEY="set $i"
-		KEY_grep="$(printf "%s\n" "$EASYRSA_NO_REM" | grep "$UNIQUE_KEY")"
+		UNIQUE="set $i"
+		KEY_grep="$(printf "%s\n" "$EASYRSA_NO_REM" | grep "$UNIQUE")"
 		KEY_value="${KEY_grep##*=}"
 		set_var $i "$KEY_value"
 	done
-}
+} #=> source_win_vars_bat ()
 
 verify_current_pki ()
 {
@@ -1776,10 +1777,15 @@ verify_current_pki ()
 	[ "$EASYRSA_VARS_IS_VER2" ] && EASYRSA_READ_VARS="nix"
 	[ "$EASYRSA_VARS_IS_WIN2" ] && EASYRSA_READ_VARS="win"
 
+	# Also copes with spaces in values
 	case "$EASYRSA_READ_VARS" in
 	nix)
+		# This throws an error due to export EASY_RSA=`pwd`
+		# And then another due to
+		# "export KEY_CONFIG=`$EASY_RSA/whichopensslcnf $EASY_RSA`"
+		# But they are not fatal and the file is fully sourced
 		# shellcheck source=/dev/null
-		. "$EASYRSA_VER2_VARSFILE" 1> /dev/null
+		. "$EASYRSA_VER2_VARSFILE" > /dev/null 2>&1
 		;;
 	win)
 		source_win_vars_bat
@@ -1810,7 +1816,7 @@ verify_current_ca ()
 		-nameopt multiline $opts || die "\
 	OpenSSL failure to process the input"
 	printf "%s\n" "-------------------------------------------------------------------------"
-	confirm "* Confirm CA shown above is the correct CA: " "yes" "* Found CA shown above at:
+	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA shown above at:
 * $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> verify_current_ca
@@ -1820,14 +1826,14 @@ backup_current_pki ()
 	verbose "> Backup current PKI .."
 
 	mkdir -p "$EASYRSA_SAFE_PKI" \
-		|| fail_upgrade "Failed to create safe PKI dir: $EASYRSA_SAFE_PKI"
+	|| fail_upgrade "Failed to create safe PKI dir: $EASYRSA_SAFE_PKI"
 
 	cp -r "$KEY_DIR" "$EASYRSA_SAFE_PKI" \
-		|| fail_upgrade "Failed to copy $KEY_DIR to $EASYRSA_SAFE_PKI"
+	|| fail_upgrade "Failed to copy $KEY_DIR to $EASYRSA_SAFE_PKI"
 
 	# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_SAFE_PKI" \
-		|| fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
+	|| fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
 
 	verbose "OK"
 	verbose "Current PKI backup created in: $EASYRSA_SAFE_PKI"
@@ -1839,7 +1845,7 @@ create_new_pki ()
 	verbose "> Create NEW PKI dirs .."
 	for i in private reqs issued certs_by_serial; do
 		mkdir -p "$EASYRSA_PKI/$i" \
-			|| fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
+		|| fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
 	done
 	verbose "OK"
 
@@ -1848,24 +1854,24 @@ create_new_pki ()
 		# Failure for these is not optional
 		# DO NOT DELETE - Files ignored: index.txt.old
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
-			|| fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
+		|| fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
 	verbose "OK"
 
-	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" "p12.private" "p8.private"; do
-
+	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
+	"p12.private" "p8.private"
+	do
 		FILE_EXT="${i%%.*}"
 		DEST_DIR="${i##*.}"
-
 		if ls "$KEY_DIR/"*".$FILE_EXT" > /dev/null 2>&1; then
-			cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" || fail_upgrade "Failed to copy .$FILE_EXT"
+			cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" \
+			|| fail_upgrade "Failed to copy .$FILE_EXT"
 		else
 			verbose "Note: No .$FILE_EXT files found"
 		fi
-
 	done
 
-	# Todo: CRL - Or generate a new CSR on completion
+	# Todo: CRL - Or generate a new CRL on completion
 	verbose "OK"
 	verbose "New PKI created in: $EASYRSA_PKI"
 } #=> create_new_pki
@@ -1876,8 +1882,10 @@ create_openssl_cnf ()
 		# chicken and egg again ..
 		EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
 		EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
-		[ -f "$EASYRSA_SSL_CNFFILE" ] || fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
-		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" || fail_upgrade "Failed egg01"
+		[ -f "$EASYRSA_SSL_CNFFILE" ] \
+		|| fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
+		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
+		|| fail_upgrade "Failed egg01"
 		easyrsa_openssl makesafeconf
 	verbose "OK"
 	verbose "New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
@@ -1949,7 +1957,7 @@ build_v3_vars ()
 " > "$EASYRSA_VARSV3_WRN" || fail_upgrade "Failed to create $EASYRSA_VARSV3_WRN"
 
 	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
-	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "Failed to find $EASYRSA_VARSV3_EXMP"
+	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "find $EASYRSA_VARSV3_EXMP"
 
 	# Create vars v3 temp file from sourced vars v2 key variables
 	{
@@ -1966,21 +1974,27 @@ build_v3_vars ()
 		printf "%s\n" ""
 	} > "$EASYRSA_VARSV3_TMP" || fail_upgrade "Failed to create $EASYRSA_VARSV3_TMP"
 
-	cat "$EASYRSA_VARSV3_WRN" "$EASYRSA_VARSV3_EXMP" "$EASYRSA_VARSV3_TMP" > "$EASYRSA_VARSV3_NEW" \
-		|| fail_upgrade "Failed to create $EASYRSA_VARSV3_NEW"
+	# cat temp files into new v3 vars
+	{
+		cat "$EASYRSA_VARSV3_WRN"
+		cat "$EASYRSA_VARSV3_EXMP"
+		cat "$EASYRSA_VARSV3_TMP"
+	} > "$EASYRSA_VARSV3_NEW" \
+	|| fail_upgrade "Failed to create $EASYRSA_VARSV3_NEW"
 
 	# This file must be created and restored at the end of TEST
 	# for the REAL update to to succeed
 	EASYRSA_VARS_LIVEBKP="$EASYRSA_TARGET_VARSFILE.livebackup"
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_VARS_LIVEBKP" \
-		|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
+	|| fail_upgrade "Failed to create $EASYRSA_VARS_LIVEBKP"
 	rm -f "$EASYRSA_VER2_VARSFILE"
 
-	# Copy vars-v3.new to vars, "$EASYRSA_TARGET_VARSFILE" is always $EASYRSA/vars
+	# "$EASYRSA_TARGET_VARSFILE" is always $EASYRSA/vars
 	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA_TARGET_VARSFILE" \
-		|| fail_upgrade "Failed to copy $EASYRSA_VARSV3_NEW to $EASYRSA_TARGET_VARSFILE"
+	|| fail_upgrade "copy $EASYRSA_VARSV3_NEW to $EASYRSA_TARGET_VARSFILE"
 
-	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" "$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
+	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" \
+		"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
 	verbose "OK"
 	verbose "New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
@@ -2002,7 +2016,6 @@ do_upgrade_23 ()
 
 	if [ "$NOSAVE" -eq 1 ]
 	then
-		#reset_test_ugrade
 		# Must stay in this order
 		# New created dirs: EASYRSA_NEW_PKI and EASYRSA_SAFE_PKI
 		rm -rf "$EASYRSA_NEW_PKI"
@@ -2010,7 +2023,7 @@ do_upgrade_23 ()
 		# EASYRSA_TARGET_VARSFILE is always the new created v3 vars
 		# Need to know if this fails
 		rm "$EASYRSA_TARGET_VARSFILE" \
-			|| fail_upgrade "Failed to remove temporary new vars file: $EASYRSA_TARGET_VARSFILE"
+		|| fail_upgrade "remove new vars file: $EASYRSA_TARGET_VARSFILE"
 		# EASYRSA_VER2_VARSFILE is either version 2 *nix ./vars or Win vars.bat
 		# Need this dance because v2 vars is same name as v3 vars above
 		cp "$EASYRSA_VARS_LIVEBKP" "$EASYRSA_VER2_VARSFILE"
