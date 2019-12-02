@@ -40,7 +40,7 @@ rem Don't leave any of these parms blank.
 set KEY_COUNTRY=US
 set KEY_PROVINCE=CA
 set KEY_CITY=SanFrancisco
-set KEY_ORG=OpenVPN
+set KEY_ORG="Open VPN"
 set KEY_EMAIL=mail@host.domain
 set KEY_CN=changeme
 set KEY_NAME=changeme
