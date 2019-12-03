@@ -1807,8 +1807,8 @@ verify_current_ca ()
 	[ -f "$KEY_DIR/ca.crt" ] || fail_upgrade "Cannot find current ca.crt:
 * $KEY_DIR/ca.crt"
 	verbose "> OK"
-	[ "$CURRENT_CA_IS_VERIFIED" ] && return 0
 	in_file="$KEY_DIR/ca.crt"
+	[ "$CURRENT_CA_IS_VERIFIED" = "$in_file" ] && return 0
 	format="x509"
 	opts="-certopt no_pubkey,no_sigdump"
 	printf "%s\n" "-------------------------------------------------------------------------"
