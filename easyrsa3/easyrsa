@@ -1740,6 +1740,8 @@ verbose ()
 
 verify_new_pki ()
 {
+	# Fail now, before any changes are made
+
 	verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
 	[ -d "$EASYRSA_NEW_PKI" ] && fail_upgrade "over write DEFAULT NEW PKI:
@@ -1750,6 +1752,11 @@ verify_new_pki ()
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
 	[ -d "$EASYRSA_SAFE_PKI" ] && fail_upgrade "over write VERY-SAFE-PKI:
 * $EASYRSA_SAFE_PKI"
+	verbose "> OK"
+
+	verbose "> Verify vars.example does exist .."
+	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
+	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "find $EASYRSA_VARSV3_EXMP"
 	verbose "> OK"
 } #=> verify_new_pki ()
 
@@ -1955,9 +1962,6 @@ build_v3_vars ()
 ########################++++++++++#########################
 
 " > "$EASYRSA_VARSV3_WRN" || fail_upgrade "Failed to create $EASYRSA_VARSV3_WRN"
-
-	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
-	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "find $EASYRSA_VARSV3_EXMP"
 
 	# Create vars v3 temp file from sourced vars v2 key variables
 	{
