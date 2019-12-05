@@ -2051,6 +2051,7 @@ manage_upgrade_23 ()
 
 	elif [ $EASYRSA_VARS_IS_WIN2 ]
 	then
+		# This works even with spaces ' ' in `pwd`
 		[ "$EASYRSA" = "." ] && EASYRSA="$(pwd)"
 		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
 		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
