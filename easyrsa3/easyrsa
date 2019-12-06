@@ -1890,11 +1890,10 @@ create_new_pki ()
 create_openssl_cnf ()
 {
 	verbose "> OpenSSL config .."
-		# chicken and egg again ..
-		EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
-		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
-		|| fail_upgrade "Failed egg01"
-		easyrsa_openssl makesafeconf
+	EASYRSA_PKI_SSL_CNFFILE="$EASYRSA_PKI/openssl-easyrsa.cnf"
+	cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
+	|| fail_upgrade "create $EASYRSA_PKI_SSL_CNFFILE"
+	easyrsa_openssl makesafeconf
 	verbose "OK"
 	verbose "New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
 } #=> create_openssl_cnf
