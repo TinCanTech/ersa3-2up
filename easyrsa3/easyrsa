@@ -1754,6 +1754,10 @@ verify_new_pki ()
 * $EASYRSA_SAFE_PKI"
 	verbose "> OK"
 
+	verbose "> Verify openssl-easyrsa.cnf does exist .."
+	EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
+	[ -f "$EASYRSA_SSL_CNFFILE" ] || fail_upgrade "find $EASYRSA_SSL_CNFFILE"
+
 	verbose "> Verify vars.example does exist .."
 	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
 	[ -f "$EASYRSA_VARSV3_EXMP" ] || fail_upgrade "find $EASYRSA_VARSV3_EXMP"
@@ -1887,10 +1891,7 @@ create_openssl_cnf ()
 {
 	verbose "> OpenSSL config .."
 		# chicken and egg again ..
-		EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
 		EASYRSA_PKI_SSL_CNFFILE="$EASYRSA/pki/openssl-easyrsa.cnf"
-		[ -f "$EASYRSA_SSL_CNFFILE" ] \
-		|| fail_upgrade "Failed to find $EASYRSA_SSL_CNFFILE"
 		cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
 		|| fail_upgrade "Failed egg01"
 		easyrsa_openssl makesafeconf
