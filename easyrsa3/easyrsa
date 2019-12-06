@@ -1980,11 +1980,8 @@ build_v3_vars ()
 	|| fail_upgrade "Failed to create $EASYRSA_VARSV3_TMP"
 
 	# cat temp files into new v3 vars
-	{
-		cat "$EASYRSA_VARSV3_WRN"
-		cat "$EASYRSA_VARSV3_EXMP"
-		cat "$EASYRSA_VARSV3_TMP"
-	} > "$EASYRSA_VARSV3_NEW" \
+	cat "$EASYRSA_VARSV3_WRN" "$EASYRSA_VARSV3_EXMP" "$EASYRSA_VARSV3_TMP" \
+	> "$EASYRSA_VARSV3_NEW" \
 	|| fail_upgrade "Failed to create $EASYRSA_VARSV3_NEW"
 
 	# This file must be created and restored at the end of TEST
