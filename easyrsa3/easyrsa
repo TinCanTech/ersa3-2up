@@ -2092,7 +2092,8 @@ up23_manage_upgrade_23 ()
 		up23_fail_upgrade "Unknown vars file version"
 	fi
 
-	up23_verbose "EasyRSA3-Upgrade v6.1"
+	up23_verbose "========================================================================="
+	up23_verbose "EasyRSA3-Upgrade v6.3"
 
 	warn "\
 =========================================================================
