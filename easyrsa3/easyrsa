@@ -1829,7 +1829,31 @@ verify_current_ca ()
 	printf "%s\n" "-------------------------------------------------------------------------"
 	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
 * $KEY_DIR/ca.crt"
-	CURRENT_CA_IS_VERIFIED="$in_file"
+
+	# Extract the current CA details
+	CA_SUBJECT="$(easyrsa_openssl $format -in "$in_file" -subject -noout -nameopt multiline)"
+	CA_countryName="$(echo "$CA_SUBJECT" | grep countryName | sed "s\`^.*=\ \`\`g")"
+	CA_stateOrProvinceName="$(echo "$CA_SUBJECT" | grep stateOrProvinceName | sed "s\`^.*=\ \`\`g")"
+	CA_localityName="$(echo "$CA_SUBJECT" | grep localityName | sed "s\`^.*=\ \`\`g")"
+	CA_organizationName="$(echo "$CA_SUBJECT" | grep organizationName | sed "s\`^.*=\ \`\`g")"
+	CA_organizationalUnitName="$(echo "$CA_SUBJECT" | grep organizationalUnitName | sed "s\`^.*=\ \`\`g")"
+	CA_emailAddress="$(echo "$CA_SUBJECT" | grep emailAddress | sed "s\`^.*=\ \`\`g")"
+
+	# Match the current CA to the vars file settings
+	CA_vars_match=1
+	[ "$CA_countryName" = "$KEY_COUNTRY" ] || CA_vars_match=0
+	[ "$CA_stateOrProvinceName" = "$KEY_PROVINCE" ] || CA_vars_match=0
+	[ "$CA_localityName" = "$KEY_CITY" ] || CA_vars_match=0
+	[ "$CA_organizationName" = "$KEY_ORG" ] || CA_vars_match=0
+	[ "$CA_organizationalUnitName" = "$KEY_OU" ] || CA_vars_match=0
+	[ "$CA_emailAddress" = "$KEY_EMAIL" ] || CA_vars_match=0
+
+	if [ "$CA_vars_match" -eq 1 ]
+	then
+		CURRENT_CA_IS_VERIFIED="$in_file"
+	else
+		fail_upgrade "CA certificate does not match vars file settings"
+	fi
 } #=> verify_current_ca
 
 backup_current_pki ()

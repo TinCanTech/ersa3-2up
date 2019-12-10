@@ -48,3 +48,10 @@ set KEY_OU=changeme
 set PKCS11_MODULE_PATH=changeme
 set PKCS11_PIN=1234
 
+set KEY_COUNTRY="US"
+set KEY_PROVINCE="CA"
+set KEY_CITY="SanFrancisco"
+set KEY_ORG="Fort-Funston"
+set KEY_EMAIL="me@myhost.mydomain"
+set KEY_OU="My Organizational Unit"
+
