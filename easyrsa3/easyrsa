@@ -2168,7 +2168,7 @@ Finally, you can verify that easyrsa works by using these two commands:
 
 "
 
-exit 9
+exit 0
 
 } # => manage_upgrade_23 ()
 
