@@ -1821,14 +1821,6 @@ verify_current_ca ()
 	in_file="$KEY_DIR/ca.crt"
 	[ "$CURRENT_CA_IS_VERIFIED" = "$in_file" ] && return 0
 	format="x509"
-	opts="-certopt no_pubkey,no_sigdump"
-	printf "%s\n" "-------------------------------------------------------------------------"
-	easyrsa_openssl $format -in "$in_file" -noout -text\
-		-nameopt multiline $opts || die "\
-	OpenSSL failure to process the input"
-	printf "%s\n" "-------------------------------------------------------------------------"
-	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
-* $KEY_DIR/ca.crt"
 
 	# Extract the current CA details
 	CA_SUBJECT="$(easyrsa_openssl $format -in "$in_file" -subject -noout -nameopt multiline)"
@@ -1850,10 +1842,22 @@ verify_current_ca ()
 
 	if [ "$CA_vars_match" -eq 1 ]
 	then
-		CURRENT_CA_IS_VERIFIED="$in_file"
+		CURRENT_CA_IS_VERIFIED="partially"
 	else
 		fail_upgrade "CA certificate does not match vars file settings"
 	fi
+
+	opts="-certopt no_pubkey,no_sigdump"
+	printf "%s\n" "-------------------------------------------------------------------------"
+	# $opts is always set here
+	# shellcheck disable=SC2086
+	easyrsa_openssl $format -in "$in_file" -noout -text\
+		-nameopt multiline $opts || die "\
+	OpenSSL failure to process the input"
+	printf "%s\n" "-------------------------------------------------------------------------"
+	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
+* $KEY_DIR/ca.crt"
+	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> verify_current_ca
 
 backup_current_pki ()
