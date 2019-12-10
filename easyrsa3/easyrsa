@@ -1848,17 +1848,26 @@ verify_current_ca ()
 	fi
 
 	opts="-certopt no_pubkey,no_sigdump"
-	printf "%s\n" "-------------------------------------------------------------------------"
-	# $opts is always set here
-	# shellcheck disable=SC2086
-	easyrsa_openssl $format -in "$in_file" -noout -text\
-		-nameopt multiline $opts || die "\
-	OpenSSL failure to process the input"
-	printf "%s\n" "-------------------------------------------------------------------------"
+	if [ ! "$EASYRSA_BATCH" ]; then
+		up23_show_current_ca
+	elif [ "$VERBOSE" ]; then
+		up23_show_current_ca
+	fi
 	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
 * $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> verify_current_ca
+
+up23_show_current_ca ()
+{
+		printf "%s\n" "-------------------------------------------------------------------------"
+		# $opts is always set here
+		# shellcheck disable=SC2086
+		easyrsa_openssl $format -in "$in_file" -noout -text\
+		-nameopt multiline $opts || die "\
+		OpenSSL failure to process the input"
+		printf "%s\n" "-------------------------------------------------------------------------"
+}
 
 backup_current_pki ()
 {
@@ -2084,6 +2093,8 @@ manage_upgrade_23 ()
 	else
 		fail_upgrade "Unknown vars file version"
 	fi
+
+	verbose "EasyRSA3-Upgrade v6.1"
 
 	warn "\
 =========================================================================
