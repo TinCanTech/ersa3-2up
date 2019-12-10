@@ -13,6 +13,8 @@ matrix:
         - shellcheck --version
         - bash -c 'export SHELLCHECK_OPTS="-S warning -e SC2006"; shopt -s globstar; shellcheck **/*.sh easyrsa3/easyrsa'
         - sh op_test.sh -vv
+	- cd easyrsa3
+	- sh EASYRSA_BATCH=1 easyrsa
 
     - os: osx
       osx_image: xcode10.1
