@@ -2092,7 +2092,7 @@ Before you can continue, EasyRSA must upgrade your settings and PKI.
   $EASYRSA
   $EASYRSA_VER2_VARSFILE :
 
-Further info: 
+Further info:
 * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 ========================================================================="
 
@@ -2149,9 +2149,9 @@ A backup of your current PKI is here:
 
 YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
 
-IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED 
+IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED
 IN ./vars
- 
+
  # This sample is in Windows syntax -- edit it for your path if not using PATH:
  #set_var EASYRSA_OPENSSL      \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
 
