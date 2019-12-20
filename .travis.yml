@@ -20,4 +20,5 @@ matrix:
       script:
         - openssl version
         - sh op_test.sh -vv
+        - sh -c 'export VERBOSE=1;  cd easyrsa3; easyrsa --batch'
 
