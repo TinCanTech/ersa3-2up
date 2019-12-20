@@ -1910,7 +1910,7 @@ up23_create_new_pki ()
 
 	up23_verbose "> Copy current PKI to NEW PKI .."
 	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
-	"p12.private" "p8.private"
+	"p12.private" "p8.private" "p7b.issued"
 	do
 		FILE_EXT="${i%%.*}"
 		DEST_DIR="${i##*.}"
