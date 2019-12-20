@@ -1716,6 +1716,7 @@ up23_verify_vars_version ()
 up23_fail_upgrade ()
 {
 	# Replace die()
+	unset EASYRSA_BATCH
 	notice "
 ============================================================================
 The update has failed but NOTHING has been lost.
@@ -1744,8 +1745,8 @@ up23_verify_new_pki ()
 
 	up23_verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
-	[ -d "$EASYRSA_NEW_PKI" ] && up23_fail_upgrade "over write DEFAULT NEW PKI:
-* $EASYRSA_NEW_PKI"
+	[ -d "$EASYRSA_NEW_PKI" ] && \
+		up23_fail_upgrade "over write DEFAULT NEW PKI: $EASYRSA_NEW_PKI"
 
 	up23_verbose "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
@@ -1881,8 +1882,9 @@ up23_backup_current_pki ()
 	cp "$EASYRSA_VER2_VARSFILE" "$EASYRSA_SAFE_PKI" \
 	|| up23_fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
 
-	up23_verbose "OK"
-	up23_verbose "Current PKI backup created in: $EASYRSA_SAFE_PKI"
+	up23_verbose "> OK"
+	up23_verbose "  Current PKI backup created in:
+  $EASYRSA_SAFE_PKI"
 } #=> up23_backup_current_pki
 
 up23_create_new_pki ()
@@ -1893,7 +1895,7 @@ up23_create_new_pki ()
 		mkdir -p "$EASYRSA_PKI/$i" \
 		|| up23_fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
 	done
-	up23_verbose "OK"
+	up23_verbose "> OK"
 
 	up23_verbose "> Copy database to NEW PKI .."
 	for i in index.txt index.txt.attr serial serial.old ca.crt; do
@@ -1902,8 +1904,9 @@ up23_create_new_pki ()
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 		|| up23_fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
-	up23_verbose "OK"
+	up23_verbose "> OK"
 
+	up23_verbose "> Copy current PKI to NEW PKI .."
 	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
 	"p12.private" "p8.private"
 	do
@@ -1913,13 +1916,14 @@ up23_create_new_pki ()
 			cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" \
 			|| up23_fail_upgrade "Failed to copy .$FILE_EXT"
 		else
-			up23_verbose "Note: No .$FILE_EXT files found"
+			up23_verbose "  Note: No .$FILE_EXT files found"
 		fi
 	done
+	up23_verbose "> OK"
 
 	# Todo: CRL - Or generate a new CRL on completion
-	up23_verbose "OK"
-	up23_verbose "New PKI created in: $EASYRSA_PKI"
+	up23_verbose "  New PKI created in:
+  $EASYRSA_PKI"
 } #=> up23_create_new_pki
 
 up23_create_openssl_cnf ()
@@ -1929,8 +1933,9 @@ up23_create_openssl_cnf ()
 	cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
 	|| up23_fail_upgrade "create $EASYRSA_PKI_SSL_CNFFILE"
 	easyrsa_openssl makesafeconf
-	up23_verbose "OK"
-	up23_verbose "New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
+	up23_verbose "> OK"
+	up23_verbose "  New OpenSSL config file created in:
+  $EASYRSA_PKI_SSL_CNFFILE"
 } #=> up23_create_openssl_cnf
 
 up23_move_easyrsa2_programs ()
@@ -1963,15 +1968,16 @@ up23_move_easyrsa2_programs ()
 
 		if [ ! -f "$NIX_FILE" ] && [ ! -f "$WIN_FILE" ]
 		then
-			up23_verbose "File does not exist, ignoring: $i"
+			up23_verbose "File does not exist, ignoring: $i(.bat)"
 		fi
 
 	[ "$NOSAVE" -eq 1  ] && rm -f "$NIX_FILE" "$WIN_FILE"
 	done
 
-	up23_verbose "OK"
+	up23_verbose "> OK"
 	# These files are not removed on TEST run
-	up23_verbose "Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
+	up23_verbose "  Easyrsa2 programs successfully moved to:
+  $EASYRSA_SAFE_PKI"
 } #=> up23_move_easyrsa2_programs
 
 up23_build_v3_vars ()
@@ -2033,22 +2039,24 @@ up23_build_v3_vars ()
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" \
 		"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
-	up23_verbose "OK"
-	up23_verbose "New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
+	up23_verbose "> OK"
+	up23_verbose "  New v3 vars file created in:
+  $EASYRSA_TARGET_VARSFILE"
 } #=> up23_build_v3_vars
 
 up23_do_upgrade_23 ()
 {
-	up23_verbose "Begin **$1** upgrade process .."
+	up23_verbose "Begin ** $1 ** upgrade process .."
+	up23_verbose ""
 
 	up23_verify_new_pki
 	up23_verify_current_pki
 	up23_verify_current_ca
 	up23_backup_current_pki
 	up23_create_new_pki
-	up23_create_openssl_cnf
 	up23_move_easyrsa2_programs
 	up23_build_v3_vars
+	up23_create_openssl_cnf
 
 
 	if [ "$NOSAVE" -eq 0 ]
@@ -2173,10 +2181,11 @@ IN ./vars
 Finally, you can verify that easyrsa works by using these two commands:
   ./easyrsa show-ca (Verify that your CA is intact and correct)
   ./easyrsa gen-crl ((re)-generate a CRL file)
-
-                 * UPGRADE COMPLETED SUCCESSFULLY *
-
 "
+          up23_verbose "
+* UPGRADE COMPLETED SUCCESSFULLY *"
+
+
 
 exit 0
 
