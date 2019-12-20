@@ -1898,13 +1898,15 @@ up23_create_new_pki ()
 	up23_verbose "> OK"
 
 	up23_verbose "> Copy database to NEW PKI .."
-	for i in index.txt index.txt.attr serial serial.old ca.crt; do
+	for i in index.txt serial serial.old ca.crt; do
 		# Failure for these is not optional
-		# DO NOT DELETE - Files ignored: index.txt.old
+		# DO NOT DELETE - Files ignored: index.txt.old index.txt.attr
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 		|| up23_fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
 	up23_verbose "> OK"
+
+	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
 
 	up23_verbose "> Copy current PKI to NEW PKI .."
 	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
@@ -2101,7 +2103,7 @@ up23_manage_upgrade_23 ()
 	fi
 
 	up23_verbose "========================================================================="
-	up23_verbose "EasyRSA3-Upgrade v6.3"
+	up23_verbose "EasyRSA3-Upgrade v6.4"
 
 	warn "\
 =========================================================================
