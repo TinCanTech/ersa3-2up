@@ -2102,8 +2102,7 @@ up23_manage_upgrade_23 ()
 		up23_fail_upgrade "Unknown vars file version"
 	fi
 
-	up23_verbose "========================================================================="
-	up23_verbose "EasyRSA3-Upgrade v6.4"
+	EASYRSA_UPGRADE_23="v6.6"
 
 	warn "\
 =========================================================================
@@ -2118,13 +2117,15 @@ Before you can continue, EasyRSA must upgrade your settings and PKI.
 
 Further info:
 * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
+
+Easyrsa upgrade version: $EASYRSA_UPGRADE_23
 ========================================================================="
 
 # Test upgrade
 
 	NOSAVE=0
 
-	confirm "* EasyRSA **TEST** upgrade (*No* changes will be written): " "yes" "
+	confirm "* EasyRSA **TEST** upgrade (Changes will NOT be written): " "yes" "
 This upgrade will TEST that the upgrade works BEFORE making any changes."
 
 	up23_do_upgrade_23 "TEST"
