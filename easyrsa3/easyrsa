@@ -1856,8 +1856,7 @@ up23_verify_current_ca ()
 	then
 		up23_show_current_ca
 	fi
-	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
-* $KEY_DIR/ca.crt"
+	confirm "* Confirm CA shown above is correct: " "yes" "Found current CA at: $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> up23_verify_current_ca
 
@@ -1912,8 +1911,6 @@ up23_create_new_pki ()
 	done
 	up23_verbose "> OK"
 
-	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
-
 	up23_verbose "> Copy current PKI to NEW PKI .."
 	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
 	"p12.private" "p8.private" "p7b.issued"
@@ -1933,6 +1930,27 @@ up23_create_new_pki ()
 	up23_verbose "  New PKI created in:
   $EASYRSA_PKI"
 } #=> up23_create_new_pki
+
+up23_upgrade_index_txt_attr ()
+{
+	up23_verbose "> Confirm that index.txt.attr exists and 'unique_suject - no'"
+	# If index.txt.attr exists and "unique_suject - no" then do nothing
+	if [ -f "$EASYRSA_PKI/index.txt.attr" ]
+	then
+		case $(grep -c 'unique_subject = no' "$EASYRSA_PKI/index.txt.attr") in
+		1) return 0 ;;
+		esac
+	fi
+	# Otherwise this is required for all easyrsa version
+	if [ "$EASYRSA_VARS_IS_VER3" ]
+	then
+		confirm "Set 'unique_subject = no' in index.txt.attr for your current CA:" "yes" \
+		"This version of easyrsa requires that 'unique_subject = no' is set correctly"
+	fi
+	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
+	up23_verbose "> OK"
+	up23_verbose "  Upgraded index.txt.attr to v306+"
+}
 
 up23_create_openssl_cnf ()
 {
@@ -2064,6 +2082,7 @@ up23_do_upgrade_23 ()
 	up23_verify_current_ca
 	up23_backup_current_pki
 	up23_create_new_pki
+	up23_upgrade_index_txt_attr
 	up23_move_easyrsa2_programs
 	up23_build_v3_vars
 	up23_create_openssl_cnf
@@ -2089,12 +2108,17 @@ up23_do_upgrade_23 ()
 up23_manage_upgrade_23 ()
 {
 	# if ANY of these conditions are met return to easyrsa and abort upgrade
-	[ "$EASYRSA_VARS_IS_VER3" ] && return 0
 	# Multiple CA's ..
 	# Other weird shit ..
 
 	# Check which vars/vars.bat to use
-	if [ $EASYRSA_VARS_IS_VER2 ]
+	if [ "$EASYRSA_VARS_IS_VER3" ]
+	then
+		# Ensure index.txt.attr "unique_subject = no"
+		up23_upgrade_index_txt_attr
+		return 0
+
+	elif [ $EASYRSA_VARS_IS_VER2 ]
 	then
 		EASYRSA_VER2_VARSFILE="$vars"
 		EASYRSA_TARGET_VARSFILE="$vars"
