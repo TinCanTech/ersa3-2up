@@ -391,7 +391,6 @@ import_req ()
 	export EASYRSA_BATCH=0
 	newline 1
 	STEP_NAME="import-req"
-	echo "STEP_NAME=$STEP_NAME="
 	action "$REQ_file" "$REQ_name"
 	export EASYRSA_BATCH=1
 }
