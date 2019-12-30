@@ -1933,6 +1933,7 @@ up23_create_new_pki ()
 
 up23_upgrade_index_txt_attr ()
 {
+	[ -d "$EASYRSA_PKI" ] || return 0
 	up23_verbose "> Confirm that index.txt.attr exists and 'unique_suject - no'"
 	# If index.txt.attr exists and "unique_suject - no" then do nothing
 	if [ -f "$EASYRSA_PKI/index.txt.attr" ]

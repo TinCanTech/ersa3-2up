@@ -330,10 +330,10 @@ action ()
 	then
 		newline
 		# shellcheck disable=SC2086
-		"$ERSA_BIN" $STEP_NAME >/dev/null 2>&1 || die "$STEP_NAME"
+		"$ERSA_BIN" $STEP_NAME "$1" "$2" >/dev/null 2>&1 || die "$STEP_NAME"
 	else
 		# shellcheck disable=SC2086
-		"$ERSA_BIN" $STEP_NAME || die "$STEP_NAME"
+		"$ERSA_BIN" $STEP_NAME "$1" "$2" || die "$STEP_NAME"
 	fi
 	completed "$STEP_NAME"
 }
@@ -390,8 +390,9 @@ import_req ()
 	# Note: easyrsa still appears to work in batch mode for this action ?
 	export EASYRSA_BATCH=0
 	newline 1
-	STEP_NAME="import-req $REQ_file $REQ_name"
-	action
+	STEP_NAME="import-req"
+	echo "STEP_NAME=$STEP_NAME="
+	action "$REQ_file" "$REQ_name"
 	export EASYRSA_BATCH=1
 }
 
