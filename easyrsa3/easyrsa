@@ -2112,6 +2112,8 @@ up23_manage_upgrade_23 ()
 	# Multiple CA's ..
 	# Other weird shit ..
 
+	EASYRSA_UPGRADE_23="v7.7"
+
 	# Check which vars/vars.bat to use
 	if [ "$EASYRSA_VARS_IS_VER3" ]
 	then
@@ -2134,8 +2136,6 @@ up23_manage_upgrade_23 ()
 	else
 		up23_fail_upgrade "Unknown vars file version"
 	fi
-
-	EASYRSA_UPGRADE_23="v6.6"
 
 	warn "\
 =========================================================================
