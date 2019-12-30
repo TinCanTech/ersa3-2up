@@ -1683,6 +1683,8 @@ set_var() {
 #   2. The #easyrsa IRC channel at freenode
 #   3. Info: https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 # --------------------------------------------------------------------------
+#
+# TODO: version < 306 to 306: index.txt.attr -> "unique_subject = no"
 
 up23_verify_vars_version ()
 {
@@ -1847,9 +1849,11 @@ up23_verify_current_ca ()
 	fi
 
 	opts="-certopt no_pubkey,no_sigdump"
-	if [ ! "$EASYRSA_BATCH" ]; then
+	if [ ! "$EASYRSA_BATCH" ]
+	then
 		up23_show_current_ca
-	elif [ "$VERBOSE" ]; then
+	elif [ "$VERBOSE" ]
+	then
 		up23_show_current_ca
 	fi
 	confirm "* Confirm CA shown above is correct: " "yes" "* Found CA at:
@@ -1891,14 +1895,16 @@ up23_create_new_pki ()
 {
 	# Dirs: renewed and revoked are created when used.
 	up23_verbose "> Create NEW PKI dirs .."
-	for i in private reqs issued certs_by_serial; do
+	for i in private reqs issued certs_by_serial
+	do
 		mkdir -p "$EASYRSA_PKI/$i" \
 		|| up23_fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
 	done
 	up23_verbose "> OK"
 
 	up23_verbose "> Copy database to NEW PKI .."
-	for i in index.txt serial serial.old ca.crt; do
+	for i in index.txt serial serial.old ca.crt
+	do
 		# Failure for these is not optional
 		# DO NOT DELETE - Files ignored: index.txt.old index.txt.attr
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
