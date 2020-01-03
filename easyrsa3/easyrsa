@@ -1709,21 +1709,24 @@ up23_verify_new_pki ()
 
 	up23_verbose "> Verify DEFAULT NEW PKI does not exist .."
 	EASYRSA_NEW_PKI="$EASYRSA/pki"
-	[ -d "$EASYRSA_NEW_PKI" ] && \
-		up23_fail_upgrade "over write DEFAULT NEW PKI: $EASYRSA_NEW_PKI"
+	[ -d "$EASYRSA_NEW_PKI" ] \
+	&& up23_fail_upgrade "DEFAULT NEW PKI exists: $EASYRSA_NEW_PKI"
 
 	up23_verbose "> Verify VERY-SAFE-PKI does not exist .."
 	EASYRSA_SAFE_PKI="$EASYRSA/VERY-SAFE-PKI"
-	[ -d "$EASYRSA_SAFE_PKI" ] && up23_fail_upgrade "over write VERY-SAFE-PKI:
-* $EASYRSA_SAFE_PKI"
+	[ -d "$EASYRSA_SAFE_PKI" ] \
+	&& up23_fail_upgrade "VERY-SAFE-PKI exists: $EASYRSA_SAFE_PKI"
 
 	up23_verbose "> Verify openssl-easyrsa.cnf does exist .."
 	EASYRSA_SSL_CNFFILE="$EASYRSA/openssl-easyrsa.cnf"
-	[ -f "$EASYRSA_SSL_CNFFILE" ] || up23_fail_upgrade "find $EASYRSA_SSL_CNFFILE"
+	[ -f "$EASYRSA_SSL_CNFFILE" ] \
+	|| up23_fail_upgrade "cannot find $EASYRSA_SSL_CNFFILE"
 
 	up23_verbose "> Verify vars.example does exist .."
 	EASYRSA_VARSV3_EXMP="$EASYRSA/vars.example"
-	[ -f "$EASYRSA_VARSV3_EXMP" ] || up23_fail_upgrade "find $EASYRSA_VARSV3_EXMP"
+	[ -f "$EASYRSA_VARSV3_EXMP" ] \
+	|| up23_fail_upgrade "cannot find $EASYRSA_VARSV3_EXMP"
+
 	up23_verbose "> OK"
 } #=> up23_verify_new_pki ()
 
@@ -1769,8 +1772,7 @@ up23_verify_current_pki ()
 		;;
 	esac
 
-	[ -d "$KEY_DIR" ] || up23_fail_upgrade "Cannot find CURRENT PKI KEY_DIR:
-* $KEY_DIR"
+	[ -d "$KEY_DIR" ] || up23_fail_upgrade "Cannot find CURRENT PKI KEY_DIR: $KEY_DIR"
 
 	up23_verbose "> OK"
 } #=> up23_verify_current_pki
@@ -1778,8 +1780,7 @@ up23_verify_current_pki ()
 up23_verify_current_ca ()
 {
 	up23_verbose "> Find CA .."
-	[ -f "$KEY_DIR/ca.crt" ] || up23_fail_upgrade "Cannot find current ca.crt:
-* $KEY_DIR/ca.crt"
+	[ -f "$KEY_DIR/ca.crt" ] || up23_fail_upgrade "Cannot find current ca.crt: $KEY_DIR/ca.crt"
 	up23_verbose "> OK"
 	in_file="$KEY_DIR/ca.crt"
 	[ "$CURRENT_CA_IS_VERIFIED" = "$in_file" ] && return 0
@@ -1818,19 +1819,20 @@ up23_verify_current_ca ()
 	then
 		up23_show_current_ca
 	fi
-	confirm "* Confirm CA shown above is correct: " "yes" "Found current CA at: $KEY_DIR/ca.crt"
+	confirm "* Confirm CA shown above is correct: " "yes" \
+		"Found current CA at: $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> up23_verify_current_ca
 
 up23_show_current_ca ()
 {
-		printf "%s\n" "-------------------------------------------------------------------------"
-		# $opts is always set here
-		# shellcheck disable=SC2086
-		easyrsa_openssl $format -in "$in_file" -noout -text\
-		-nameopt multiline $opts || die "\
-		OpenSSL failure to process the input"
-		printf "%s\n" "-------------------------------------------------------------------------"
+	printf "%s\n" "-------------------------------------------------------------------------"
+	# $opts is always set here
+	# shellcheck disable=SC2086
+	easyrsa_openssl $format -in "$in_file" -noout -text\
+	-nameopt multiline $opts || die "\
+	OpenSSL failure to process the input"
+	printf "%s\n" "-------------------------------------------------------------------------"
 }
 
 up23_backup_current_pki ()
@@ -2032,8 +2034,7 @@ up23_build_v3_vars ()
 		"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
 	up23_verbose "> OK"
-	up23_verbose "  New v3 vars file created in:
-  $EASYRSA_TARGET_VARSFILE"
+	up23_verbose "  New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
 } #=> up23_build_v3_vars
 
 up23_do_upgrade_23 ()
@@ -2208,8 +2209,6 @@ Finally, you can verify that easyrsa works by using these two commands:
 "
           up23_verbose "
 * UPGRADE COMPLETED SUCCESSFULLY *"
-
-
 
 exit 0
 
