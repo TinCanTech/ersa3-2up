@@ -13,7 +13,7 @@ matrix:
         - shellcheck --version
         - bash -c 'export SHELLCHECK_OPTS="-S warning -e SC2006"; shopt -s globstar; shellcheck **/*.sh easyrsa3/easyrsa'
         - sh -c '[ -f ./easyrsa3/vars.bat ] && mv ./easyrsa3/vars.bat ./easyrsa3/var.bat.temp'
-        - sh ./op_test.sh -vv'
+        - sh op_test.sh -vv
         - sh -c '[ -f ./easyrsa3/vars.bat.temp ] && mv ./easyrsa3/vars.bat.temp ./easyrsa3/var.bat'
         - sh -c 'export VERBOSE=1;  cd easyrsa3; easyrsa --batch; ./easyrsa show-ca'
 
