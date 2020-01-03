@@ -1580,7 +1580,7 @@ vars_setup() {
 	# If $EASYRSA_NO_VARS is defined (not blank) this is skipped
 	if [ -z "$EASYRSA_NO_VARS" ] && [ -n "$vars" ]; then
 		#shellcheck disable=SC2034
-		EASYRSA_CALLER=1
+		EASYRSA_CALLER=1 
 		# shellcheck disable=SC1090
 		. "$vars"
 		notice "\
@@ -1676,7 +1676,6 @@ set_var() {
 #   3. Info: https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 # --------------------------------------------------------------------------
 #
-# TODO: version < 306 to 306: index.txt.attr -> "unique_subject = no"
 
 up23_fail_upgrade ()
 {
@@ -2324,7 +2323,8 @@ trap "exit 3" 3
 trap "exit 6" 6
 trap "exit 14" 15
 
-# If vars is version 2 then offer upgrade: EasyRSA v2.x -> EasyRSA v3.x
+# Upgrade: EasyRSA v2.x to EasyRSA v3.x
+# Upgrade: EasyRSA < v3.0.6 to v3.0.6+
 up23_manage_upgrade_23
 
 # determine how we were called, then hand off to the function responsible
