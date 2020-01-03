@@ -1576,15 +1576,23 @@ vars_setup() {
 		vars="$prog_vars"
 	fi
 
+	# First check the version of vars and only source if it is version 3
+	# This has to be tested first if vars file was not located for vars.bat
+	up23_verify_vars_version
+
 	# If a vars file was located, source it
 	# If $EASYRSA_NO_VARS is defined (not blank) this is skipped
 	if [ -z "$EASYRSA_NO_VARS" ] && [ -n "$vars" ]; then
-		#shellcheck disable=SC2034
-		EASYRSA_CALLER=1
-		# shellcheck disable=SC1090
-		. "$vars"
-		notice "\
+
+		# Only source if it is version 3
+		if [ "$EASYRSA_VARS_IS_VER3" ]; then
+			#shellcheck disable=SC2034
+			EASYRSA_CALLER=1
+			# shellcheck disable=SC1090
+			. "$vars"
+			notice "\
 Note: using Easy-RSA configuration from: $vars"
+		fi
 	fi
 	
 	# Set defaults, preferring existing env-vars if present
@@ -1677,6 +1685,35 @@ set_var() {
 # --------------------------------------------------------------------------
 #
 # TODO: version < 306 to 306: index.txt.attr -> "unique_subject = no"
+
+up23_verify_vars_version ()
+{
+	# Prefer vars over vars.bat, both should not exist
+	if [ -f "$vars" ]
+	then
+		# Windows has limited options -- Maybe fix this one day
+		# A little housekeeping: DON'T EDIT THIS SECTION
+		case $(grep -c 'Complain if a user tries to do this' "$vars") in
+			1)	EASYRSA_VARS_IS_VER3=1 && return 0 ;;
+			0)	EASYRSA_VARS_IS_VER2=1 && return 0 ;;
+			*)	fail_upgrade "vars problem *complaining*" ;;
+		esac
+	fi
+
+	# Only test for vars.bat in `.` directory
+	if [ -f "./vars.bat" ]
+	then
+		# Windows note: prog_dir & EASYRSA is only ever set to '.'
+		EASYRSA_VARS_IS_WIN2=1
+		return 0
+	fi
+
+	# vars is not assigned *and* is not Windows vars.bat
+	# This can only happen if EASYRSA_NO_VARS is assigned
+	# Hopefully ...
+	# Must be EasyRSA v3
+	EASYRSA_VARS_IS_VER3=1
+} #=> up23_verify_vars_version ()
 
 up23_fail_upgrade ()
 {
@@ -1899,21 +1936,18 @@ up23_upgrade_index_txt_attr ()
 	[ -d "$EASYRSA_PKI" ] || return 0
 	up23_verbose "> Confirm that index.txt.attr exists and 'unique_subject = no'"
 	# If index.txt.attr exists and "unique_suject - no" then do nothing
-	# If index.txt.attr does not exists then do nothing
 	if [ -f "$EASYRSA_PKI/index.txt.attr" ]
 	then
-		if grep -q 'unique_subject = no' "$EASYRSA_PKI/index.txt.attr"
-		then
-			return 0
-		fi
-	else
-		return 0
+		case $(grep -c 'unique_subject = no' "$EASYRSA_PKI/index.txt.attr") in
+		1) return 0 ;;
+		esac
 	fi
-
-	# Otherwise this is required for all easyrsa v3
-	confirm "Set 'unique_subject = no' in index.txt.attr for your current CA:" "yes" \
-	"This version of easyrsa requires that 'unique_subject = no' is set correctly"
-
+	# Otherwise this is required for all easyrsa version
+	if [ "$EASYRSA_VARS_IS_VER3" ]
+	then
+		confirm "Set 'unique_subject = no' in index.txt.attr for your current CA:" "yes" \
+		"This version of easyrsa requires that 'unique_subject = no' is set correctly"
+	fi
 	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
 	up23_verbose "> OK"
 	up23_verbose "  Upgraded index.txt.attr to v306+"
@@ -2074,55 +2108,33 @@ up23_do_upgrade_23 ()
 
 up23_manage_upgrade_23 ()
 {
+	# if ANY of these conditions are met return to easyrsa and abort upgrade
+	# Multiple CA's ..
+	# Other weird shit ..
 
-	EASYRSA_UPGRADE_23="v8.1"
+	EASYRSA_UPGRADE_23="v7.7"
 
-	# Verify all existing versions of vars/vars.bat
-	if [ -f "$vars" ]
-	then
-		if grep -q 'Complain if a user tries to do this:' "$vars"
-		then
-			EASYRSA_VARS_IS_VER3=1
-		fi
-
-		# Easyrsa v3 does not use NOR allow use of `export`.
-		if grep -q 'export' "$vars"
-		then
-			EASYRSA_VARS_IS_VER2=1
-			EASYRSA_VER2_VARSFILE="$vars"
-			EASYRSA_TARGET_VARSFILE="$vars"
-		fi
-	fi
-
-	if [ -f "$EASYRSA/vars.bat" ]
-	then
-		EASYRSA_VARS_IS_WIN2=1
-		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
-		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
-	fi
-
-	# Only allow specific vars/vars.bat to exist
-	if [ "$EASYRSA_VARS_IS_VER3" ] && [ "$EASYRSA_VARS_IS_VER2" ]
-	then
-		die "Verify your current vars file, v3 cannot use 'export'."
-	fi
-
-	if [ "$EASYRSA_VARS_IS_VER3" ] && [ "$EASYRSA_VARS_IS_WIN2" ]
-	then
-		die "Verify your current vars/vars.bat file, cannot have both."
-	fi
-
-	if [ "$EASYRSA_VARS_IS_VER2" ] && [ "$EASYRSA_VARS_IS_WIN2" ]
-	then
-		die "Verify your current vars/vars.bat file, cannot have both."
-	fi
-
-	# v3 only
+	# Check which vars/vars.bat to use
 	if [ "$EASYRSA_VARS_IS_VER3" ]
 	then
-		# v3 ensure index.txt.attr "unique_subject = no"
+		# Ensure index.txt.attr "unique_subject = no"
 		up23_upgrade_index_txt_attr
 		return 0
+
+	elif [ $EASYRSA_VARS_IS_VER2 ]
+	then
+		EASYRSA_VER2_VARSFILE="$vars"
+		EASYRSA_TARGET_VARSFILE="$vars"
+
+	elif [ $EASYRSA_VARS_IS_WIN2 ]
+	then
+		# This works even with spaces ' ' in `pwd`
+		[ "$EASYRSA" = "." ] && EASYRSA="$(pwd)"
+		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
+		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
+
+	else
+		up23_fail_upgrade "Unknown vars file version"
 	fi
 
 	warn "\
