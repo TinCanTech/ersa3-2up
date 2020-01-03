@@ -1865,10 +1865,10 @@ up23_create_new_pki ()
 	up23_verbose "> OK"
 
 	up23_verbose "> Copy database to NEW PKI .."
-	for i in index.txt serial serial.old ca.crt
+	for i in index.txt serial serial.old ca.crt index.txt.attr
 	do
 		# Failure for these is not optional
-		# DO NOT DELETE - Files ignored: index.txt.old index.txt.attr
+		# DO NOT DELETE - Files ignored: index.txt.old
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 		|| up23_fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
