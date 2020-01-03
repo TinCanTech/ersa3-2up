@@ -2039,6 +2039,7 @@ up23_build_v3_vars ()
 
 up23_do_upgrade_23 ()
 {
+	up23_verbose "============================================================================"
 	up23_verbose "Begin ** $1 ** upgrade process .."
 	up23_verbose ""
 	up23_verbose "Easyrsa upgrade version: $EASYRSA_UPGRADE_23"
