@@ -1951,8 +1951,7 @@ up23_move_easyrsa2_programs ()
 
 	up23_verbose "> OK"
 	# These files are not removed on TEST run
-	up23_verbose "  Easyrsa2 programs successfully moved to:
-  $EASYRSA_SAFE_PKI"
+	up23_verbose "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
 } #=> up23_move_easyrsa2_programs
 
 up23_build_v3_vars ()
