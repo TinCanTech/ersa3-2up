@@ -1895,8 +1895,8 @@ up23_upgrade_index_txt_attr ()
 	fi
 
 	# Otherwise this is required for all easyrsa v3
-	confirm "Set 'unique_subject = no' in index.txt.attr for your current CA:" "yes" \
-	"This version of easyrsa requires that 'unique_subject = no' is set correctly"
+	
+	#confirm "Set 'unique_subject = no' in index.txt.attr for your current CA: " "yes" "This version of easyrsa requires that 'unique_subject = no' is set correctly"
 
 	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
 	up23_verbose "> OK"
@@ -2150,7 +2150,7 @@ EasyRSA upgrade **TEST** has successfully completed.
 
 	NOSAVE=1
 
-	confirm "* EasyRSA **REAL** upgrade (Changes WILL be written):" "yes" "
+	confirm "* EasyRSA **REAL** upgrade (Changes WILL be written): " "yes" "
 =========================================================================
 
                              * WARNING *
@@ -2159,7 +2159,7 @@ Run REAL upgrade: Answer yes (Once completed you will have a version 3 PKI)
 Terminate upgrade: Answer no (No changes have been made to your current PKI)
 "
 
-	confirm "* Confirm **REAL** upgrade (Changes will be written):" "yes" "
+	confirm "* Confirm **REAL** upgrade (Changes will be written): " "yes" "
 =========================================================================
 
                           * SECOND WARNING *
@@ -2181,18 +2181,20 @@ A backup of your current PKI is here:
 
                         * IMPORTANT NOTICE *
 
-YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
+1. YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
 
-IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED
-IN ./vars
+2. IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED
+   IN ./vars (example follows)
 
- # This sample is in Windows syntax -- edit it for your path if not using PATH:
- #set_var EASYRSA_OPENSSL      \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+   # This sample is in Windows syntax -- edit it for your path if not using PATH:
+   #set_var EASYRSA_OPENSSL      \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+   or
+   #set_var EASYRSA_OPENSSL      \"C:/Program Files/Openvpn/bin/openssl.exe\"
 
 
-Finally, you can verify that easyrsa works by using these two commands:
-  ./easyrsa show-ca (Verify that your CA is intact and correct)
-  ./easyrsa gen-crl ((re)-generate a CRL file)
+3. Finally, you can verify that easyrsa works by using these two commands:
+    ./easyrsa show-ca (Verify that your CA is intact and correct)
+    ./easyrsa gen-crl ((re)-generate a CRL file)
 "
           up23_verbose "
                    * UPGRADE COMPLETED SUCCESSFULLY *"
