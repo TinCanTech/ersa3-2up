@@ -2063,19 +2063,21 @@ up23_do_upgrade_23 ()
 
 up23_manage_upgrade_23 ()
 {
-	EASYRSA_UPGRADE_23="v9.90"
+	EASYRSA_UPGRADE_23="v9.91"
 
 	# Verify all existing versions of vars/vars.bat
 	if [ -f "$vars" ]
 	then
 		if grep -q 'Complain if a user tries to do this:' "$vars"
 		then
+			EASYRSA_FOUND_VARS=1
 			EASYRSA_VARS_IS_VER3=1
 		fi
 
 		# Easyrsa v3 does not use NOR allow use of `export`.
 		if grep -q 'export' "$vars"
 		then
+			EASYRSA_FOUND_VARS=1
 			EASYRSA_VARS_IS_VER2=1
 			EASYRSA_VER2_VARSFILE="$vars"
 			EASYRSA_TARGET_VARSFILE="$vars"
@@ -2084,10 +2086,13 @@ up23_manage_upgrade_23 ()
 
 	if [ -f "$EASYRSA/vars.bat" ]
 	then
+		EASYRSA_FOUND_VARS=1
 		EASYRSA_VARS_IS_WIN2=1
 		EASYRSA_VER2_VARSFILE="$EASYRSA/vars.bat"
 		EASYRSA_TARGET_VARSFILE="$EASYRSA/vars"
 	fi
+
+	[ "$EASYRSA_FOUND_VARS" ] || return 0
 
 	# Only allow specific vars/vars.bat to exist
 	if [ "$EASYRSA_VARS_IS_VER3" ] && [ "$EASYRSA_VARS_IS_VER2" ]
