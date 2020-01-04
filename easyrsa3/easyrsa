@@ -1689,7 +1689,7 @@ ERROR: $1
 ----------------------------------------------------------------------------
 
 Further info:
-* https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
+* https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade#ersa-up23-fails
 
 Easyrsa3 upgrade FAILED
 ============================================================================
@@ -1739,10 +1739,11 @@ up23_verify_current_pki ()
 	EASYRSA_NO_REM="$(grep '^set ' "$EASYRSA_VER2_VARSFILE")"
 
 	# This list may not be complete
+	# Not required: DH_KEY_SIZE PKCS11_MODULE_PATH PKCS11_PIN
 	for i in KEY_DIR KEY_SIZE KEY_COUNTRY KEY_PROVINCE \
 	KEY_CITY KEY_ORG KEY_EMAIL KEY_CN KEY_NAME KEY_OU
 	do
-		# Not required: DH_KEY_SIZE PKCS11_MODULE_PATH PKCS11_PIN
+		# Effectively, source the v2 vars file
 		UNIQUE="set $i"
 		KEY_grep="$(printf "%s\n" "$EASYRSA_NO_REM" | grep "$UNIQUE")"
 		KEY_value="${KEY_grep##*=}"
@@ -1758,6 +1759,7 @@ up23_verify_current_pki ()
 up23_verify_current_ca ()
 {
 	up23_verbose "> Find CA .."
+	# $KEY_DIR is assigned in up23_verify_current_pki ()
 	[ -f "$KEY_DIR/ca.crt" ] || up23_fail_upgrade "Cannot find current ca.crt: $KEY_DIR/ca.crt"
 	up23_verbose "> OK"
 	up23_verbose "  Current CA found in:  $KEY_DIR/ca.crt"
@@ -1849,10 +1851,10 @@ up23_create_new_pki ()
 	up23_verbose ">> OK"
 
 	up23_verbose ">> Copy database to NEW PKI .."
+	# Failure for these is not optional
+	# DO NOT DELETE - Files ignored: index.txt.old
 	for i in index.txt serial serial.old ca.crt index.txt.attr
 	do
-		# Failure for these is not optional
-		# DO NOT DELETE - Files ignored: index.txt.old
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 		|| up23_fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
@@ -1882,22 +1884,21 @@ up23_upgrade_index_txt_attr ()
 {
 	[ -d "$EASYRSA_PKI" ] || return 0
 	up23_verbose "> Confirm that index.txt.attr exists and 'unique_subject = no'"
-	# If index.txt.attr exists and "unique_suject - no" then do nothing
-	# If index.txt.attr does not exists then do nothing
 	if [ -f "$EASYRSA_PKI/index.txt.attr" ]
 	then
 		if grep -q 'unique_subject = no' "$EASYRSA_PKI/index.txt.attr"
 		then
+			# If index.txt.attr exists and "unique_suject - no" then do nothing
 			return 0
 		fi
 	else
+		# If index.txt.attr does not exists then do nothing
 		return 0
 	fi
 
 	# Otherwise this is required for all easyrsa v3
-	
 	#confirm "Set 'unique_subject = no' in index.txt.attr for your current CA: " "yes" "This version of easyrsa requires that 'unique_subject = no' is set correctly"
-
+	
 	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
 	up23_verbose "> OK"
 	up23_verbose "  Upgraded index.txt.attr to v306+"
@@ -1913,12 +1914,13 @@ up23_create_openssl_cnf ()
 	up23_verbose "> OK"
 	up23_verbose "  New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
 
+	# Create $EASYRSA_PKI/safessl-easyrsa.cnf
 	easyrsa_openssl makesafeconf
 	if [ -f "$EASYRSA_PKI_SAFE_CNFFILE" ]
 	then
 		up23_verbose "  New SafeSSL config file created in: $EASYRSA_PKI_SAFE_CNFFILE"
 	else
-		up23_verbose "  FAILED: New SafeSSL config file created in: $EASYRSA_PKI_SAFE_CNFFILE"
+		up23_verbose "  FAILED to create New SafeSSL config file in: $EASYRSA_PKI_SAFE_CNFFILE"
 	fi
 } #=> up23_create_openssl_cnf ()
 
@@ -1955,11 +1957,11 @@ up23_move_easyrsa2_programs ()
 			up23_verbose "File does not exist, ignoring: $i(.bat)"
 		fi
 
+	# These files are not removed on TEST run
 	[ "$NOSAVE" -eq 1  ] && rm -f "$NIX_FILE" "$WIN_FILE"
 	done
 
 	up23_verbose "> OK"
-	# These files are not removed on TEST run
 	up23_verbose "  Easyrsa2 programs successfully moved to: $EASYRSA_SAFE_PKI"
 } #=> up23_move_easyrsa2_programs ()
 
@@ -2019,6 +2021,7 @@ up23_build_v3_vars ()
 	cp "$EASYRSA_VARSV3_NEW" "$EASYRSA_TARGET_VARSFILE" \
 	|| up23_fail_upgrade "copy $EASYRSA_VARSV3_NEW to $EASYRSA_TARGET_VARSFILE"
 
+	# Delete temp files
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" \
 	"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
@@ -2063,7 +2066,7 @@ up23_do_upgrade_23 ()
 
 up23_manage_upgrade_23 ()
 {
-	EASYRSA_UPGRADE_23="v9.91"
+	EASYRSA_UPGRADE_23="v0.99a"
 
 	# Verify all existing versions of vars/vars.bat
 	if [ -f "$vars" ]
