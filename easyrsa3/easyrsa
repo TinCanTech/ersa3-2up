@@ -2029,7 +2029,7 @@ up23_build_v3_vars ()
 	|| up23_fail_upgrade "copy $EASYRSA_VARSV3_NEW to $EASYRSA_TARGET_VARSFILE"
 
 	rm -f "$EASYRSA_VARSV2_TMP" "$EASYRSA_VARSV3_TMP" \
-		"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
+	"$EASYRSA_VARSV3_NEW" "$EASYRSA_VARSV3_WRN"
 
 	up23_verbose "> OK"
 	up23_verbose "  New v3 vars file created in: $EASYRSA_TARGET_VARSFILE"
@@ -2052,7 +2052,6 @@ up23_do_upgrade_23 ()
 	up23_move_easyrsa2_programs
 	up23_build_v3_vars
 	up23_create_openssl_cnf
-
 
 	if [ "$NOSAVE" -eq 0 ]
 	then
