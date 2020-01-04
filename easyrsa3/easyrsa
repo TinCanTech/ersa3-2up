@@ -1730,47 +1730,23 @@ up23_verify_new_pki ()
 	up23_verbose "> OK"
 } #=> up23_verify_new_pki ()
 
-up23_source_win_vars_bat ()
+up23_verify_current_pki ()
 {
+	up23_verbose "> Find CURRENT PKI vars .."
+
 	# This can probably be improved
 	EASYRSA_NO_REM="$(grep '^set ' "$EASYRSA_VER2_VARSFILE")"
 
 	# This list may not be complete
-	for i in KEY_DIR DH_KEY_SIZE KEY_SIZE KEY_COUNTRY KEY_PROVINCE \
-	KEY_CITY KEY_ORG KEY_EMAIL KEY_CN KEY_NAME KEY_OU \
-	PKCS11_MODULE_PATH PKCS11_PIN
+	for i in KEY_DIR KEY_SIZE KEY_COUNTRY KEY_PROVINCE \
+	KEY_CITY KEY_ORG KEY_EMAIL KEY_CN KEY_NAME KEY_OU
 	do
+		# Not required: DH_KEY_SIZE PKCS11_MODULE_PATH PKCS11_PIN
 		UNIQUE="set $i"
 		KEY_grep="$(printf "%s\n" "$EASYRSA_NO_REM" | grep "$UNIQUE")"
 		KEY_value="${KEY_grep##*=}"
 		set_var $i "$KEY_value"
 	done
-} #=> up23_source_win_vars_bat ()
-
-up23_verify_current_pki ()
-{
-	up23_verbose "> Find CURRENT PKI vars .."
-
-	[ "$EASYRSA_VARS_IS_VER2" ] && EASYRSA_READ_VARS="nix"
-	[ "$EASYRSA_VARS_IS_WIN2" ] && EASYRSA_READ_VARS="win"
-
-	# Also copes with spaces in values
-	case "$EASYRSA_READ_VARS" in
-	nix)
-		# This throws an error due to export EASY_RSA=`pwd`
-		# And then another due to
-		# "export KEY_CONFIG=`$EASY_RSA/whichopensslcnf $EASY_RSA`"
-		# But they are not fatal and the file is fully sourced
-		# shellcheck source=/dev/null
-		. "$EASYRSA_VER2_VARSFILE" > /dev/null 2>&1
-		;;
-	win)
-		up23_source_win_vars_bat
-		;;
-	*)
-		up23_fail_upgrade "This cannot happen: verify_current_pki()"
-		;;
-	esac
 
 	[ -d "$KEY_DIR" ] || up23_fail_upgrade "Cannot find CURRENT PKI KEY_DIR: $KEY_DIR"
 
@@ -1922,12 +1898,19 @@ up23_create_openssl_cnf ()
 {
 	up23_verbose "> OpenSSL config .."
 	EASYRSA_PKI_SSL_CNFFILE="$EASYRSA_PKI/openssl-easyrsa.cnf"
+	EASYRSA_PKI_SAFE_CNFFILE="$EASYRSA_PKI/safessl-easyrsa.cnf"
 	cp "$EASYRSA_SSL_CNFFILE" "$EASYRSA_PKI_SSL_CNFFILE" \
 	|| up23_fail_upgrade "create $EASYRSA_PKI_SSL_CNFFILE"
-	easyrsa_openssl makesafeconf
 	up23_verbose "> OK"
-	up23_verbose "  New OpenSSL config file created in:
-  $EASYRSA_PKI_SSL_CNFFILE"
+	up23_verbose "  New OpenSSL config file created in: $EASYRSA_PKI_SSL_CNFFILE"
+
+	easyrsa_openssl makesafeconf
+	if [ -f "$EASYRSA_PKI_SAFE_CNFFILE" ]
+	then
+		up23_verbose "  New SafeSSL config file created in: $EASYRSA_PKI_SAFE_CNFFILE"
+	else
+		up23_verbose "  FAILED: New SafeSSL config file created in: $EASYRSA_PKI_SAFE_CNFFILE"
+	fi
 } #=> up23_create_openssl_cnf
 
 up23_move_easyrsa2_programs ()
