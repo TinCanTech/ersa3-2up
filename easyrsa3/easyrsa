@@ -2064,7 +2064,7 @@ up23_do_upgrade_23 ()
 up23_manage_upgrade_23 ()
 {
 
-	EASYRSA_UPGRADE_23="v8.1"
+	EASYRSA_UPGRADE_23="v9.1"
 
 	# Verify all existing versions of vars/vars.bat
 	if [ -f "$vars" ]
