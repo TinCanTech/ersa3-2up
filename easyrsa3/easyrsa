@@ -2195,7 +2195,7 @@ Finally, you can verify that easyrsa works by using these two commands:
   ./easyrsa gen-crl ((re)-generate a CRL file)
 "
           up23_verbose "
-* UPGRADE COMPLETED SUCCESSFULLY *"
+                   * UPGRADE COMPLETED SUCCESSFULLY *"
 
 exit 0
 
