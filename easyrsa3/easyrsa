@@ -2128,7 +2128,8 @@ Further info:
 * https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade
 
 Easyrsa upgrade version: $EASYRSA_UPGRADE_23
-========================================================================="
+=========================================================================
+"
 
 # Test upgrade
 
@@ -2197,7 +2198,8 @@ A backup of your current PKI is here:
     ./easyrsa gen-crl ((re)-generate a CRL file)
 "
           up23_verbose "
-                   * UPGRADE COMPLETED SUCCESSFULLY *"
+                   * UPGRADE COMPLETED SUCCESSFULLY *
+"
 
 exit 0
 
