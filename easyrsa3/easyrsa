@@ -1819,8 +1819,7 @@ up23_verify_current_ca ()
 	then
 		up23_show_current_ca
 	fi
-	confirm "* Confirm CA shown above is correct: " "yes" \
-		"Found current CA at: $KEY_DIR/ca.crt"
+	confirm "* Confirm CA shown above is correct: " "yes" "Found current CA at: $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> up23_verify_current_ca
 
@@ -1850,8 +1849,7 @@ up23_backup_current_pki ()
 	|| up23_fail_upgrade "Failed to copy $EASYRSA_VER2_VARSFILE to EASYRSA_SAFE_PKI"
 
 	up23_verbose "> OK"
-	up23_verbose "  Current PKI backup created in:
-  $EASYRSA_SAFE_PKI"
+	up23_verbose "  Current PKI backup created in: $EASYRSA_SAFE_PKI"
 } #=> up23_backup_current_pki
 
 up23_create_new_pki ()
