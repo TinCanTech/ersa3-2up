@@ -1728,11 +1728,12 @@ up23_verify_new_pki ()
 	|| up23_fail_upgrade "cannot find $EASYRSA_VARSV3_EXMP"
 
 	up23_verbose "> OK"
+	up23_verbose "  Initial dirs & files are in a workable state."
 } #=> up23_verify_new_pki ()
 
 up23_verify_current_pki ()
 {
-	up23_verbose "> Find CURRENT PKI vars .."
+	up23_verbose "> Verify CURRENT PKI vars .."
 
 	# This can probably be improved
 	EASYRSA_NO_REM="$(grep '^set ' "$EASYRSA_VER2_VARSFILE")"
@@ -1751,6 +1752,7 @@ up23_verify_current_pki ()
 	[ -d "$KEY_DIR" ] || up23_fail_upgrade "Cannot find CURRENT PKI KEY_DIR: $KEY_DIR"
 
 	up23_verbose "> OK"
+	up23_verbose "  Current CURRENT PKI vars uses PKI in: $KEY_DIR"
 } #=> up23_verify_current_pki
 
 up23_verify_current_ca ()
@@ -1758,12 +1760,18 @@ up23_verify_current_ca ()
 	up23_verbose "> Find CA .."
 	[ -f "$KEY_DIR/ca.crt" ] || up23_fail_upgrade "Cannot find current ca.crt: $KEY_DIR/ca.crt"
 	up23_verbose "> OK"
+	up23_verbose "  Current CA found in:  $KEY_DIR/ca.crt"
+
+	# If CA is already verified then return
 	in_file="$KEY_DIR/ca.crt"
 	[ "$CURRENT_CA_IS_VERIFIED" = "$in_file" ] && return 0
 	format="x509"
 
+	# Current CA is unverified
 	# Extract the current CA details
 	CA_SUBJECT="$(easyrsa_openssl $format -in "$in_file" -subject -noout -nameopt multiline)"
+
+	# Extract individual elements
 	CA_countryName="$(echo "$CA_SUBJECT" | grep countryName | sed "s\`^.*=\ \`\`g")"
 	CA_stateOrProvinceName="$(echo "$CA_SUBJECT" | grep stateOrProvinceName | sed "s\`^.*=\ \`\`g")"
 	CA_localityName="$(echo "$CA_SUBJECT" | grep localityName | sed "s\`^.*=\ \`\`g")"
@@ -1771,7 +1779,7 @@ up23_verify_current_ca ()
 	CA_organizationalUnitName="$(echo "$CA_SUBJECT" | grep organizationalUnitName | sed "s\`^.*=\ \`\`g")"
 	CA_emailAddress="$(echo "$CA_SUBJECT" | grep emailAddress | sed "s\`^.*=\ \`\`g")"
 
-	# Match the current CA to the vars file settings
+	# Match the current CA elements to the vars file settings
 	CA_vars_match=1
 	[ "$CA_countryName" = "$KEY_COUNTRY" ] || CA_vars_match=0
 	[ "$CA_stateOrProvinceName" = "$KEY_PROVINCE" ] || CA_vars_match=0
@@ -1831,15 +1839,16 @@ up23_backup_current_pki ()
 up23_create_new_pki ()
 {
 	# Dirs: renewed and revoked are created when used.
-	up23_verbose "> Create NEW PKI dirs .."
+	up23_verbose "> Create NEW PKI .."
+	up23_verbose ">> Create NEW PKI dirs .."
 	for i in private reqs issued certs_by_serial
 	do
 		mkdir -p "$EASYRSA_PKI/$i" \
 		|| up23_fail_upgrade "Failed to Create NEW PKI dir: $EASYRSA_PKI/$i"
 	done
-	up23_verbose "> OK"
+	up23_verbose ">> OK"
 
-	up23_verbose "> Copy database to NEW PKI .."
+	up23_verbose ">> Copy database to NEW PKI .."
 	for i in index.txt serial serial.old ca.crt index.txt.attr
 	do
 		# Failure for these is not optional
@@ -1847,9 +1856,9 @@ up23_create_new_pki ()
 		cp "$KEY_DIR/$i" "$EASYRSA_PKI" \
 		|| up23_fail_upgrade "Failed to copy $KEY_DIR/$i to $EASYRSA_PKI"
 	done
-	up23_verbose "> OK"
+	up23_verbose ">> OK"
 
-	up23_verbose "> Copy current PKI to NEW PKI .."
+	up23_verbose ">> Copy current PKI to NEW PKI .."
 	for i in "csr.reqs" "pem.certs_by_serial" "crt.issued" "key.private" \
 	"p12.private" "p8.private" "p7b.issued"
 	do
@@ -1859,14 +1868,14 @@ up23_create_new_pki ()
 			cp "$KEY_DIR/"*".$FILE_EXT" "$EASYRSA_PKI/$DEST_DIR" \
 			|| up23_fail_upgrade "Failed to copy .$FILE_EXT"
 		else
-			up23_verbose "  Note: No .$FILE_EXT files found"
+			up23_verbose "   Note: No .$FILE_EXT files found"
 		fi
 	done
+	up23_verbose ">> OK"
 	up23_verbose "> OK"
 
 	# Todo: CRL - Or generate a new CRL on completion
-	up23_verbose "  New PKI created in:
-  $EASYRSA_PKI"
+	up23_verbose "  New PKI created in: $EASYRSA_PKI"
 } #=> up23_create_new_pki
 
 up23_upgrade_index_txt_attr ()
