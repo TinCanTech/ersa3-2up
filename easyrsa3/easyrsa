@@ -2237,7 +2237,7 @@ A backup of your current PKI is here:
                    * UPGRADE COMPLETED SUCCESSFULLY *
 "
 
-exit 0
+return 0
 
 } # => up23_manage_upgrade_23 ()
 
