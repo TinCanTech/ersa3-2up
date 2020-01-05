@@ -66,7 +66,7 @@ export KEY_PROVINCE="CA"
 export KEY_CITY="SanFrancisco"
 export KEY_ORG="Fort-Funston"
 export KEY_EMAIL="me@myhost.mydomain"
-export KEY_OU="My Organizational Unit"
+export KEY_OU="MyOrganizationalUnit"
 
 # X509 Subject Field
 export KEY_NAME="EasyRSA"
