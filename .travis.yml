@@ -1,5 +1,4 @@
 language: bash
-sudo: false
 
 matrix:
   include:
@@ -22,7 +21,6 @@ matrix:
         - sh -c 'export VERBOSE=1;  cd easyrsa3; ./easyrsa --batch upgrade pki; ./easyrsa --batch show-ca'
 
     - os: linux
-      allow_failures: true
       dist: xenial
       env: PATH=/usr/bin:/bin:./:/usr/local/bin
       script:
