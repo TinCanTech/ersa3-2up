@@ -15,7 +15,7 @@ matrix:
         - sh -c '[ -f ./easyrsa3/vars.bat ] && mv ./easyrsa3/vars.bat ./easyrsa3/vars.bat.temp'
         - sh op_test.sh -vv
         - sh -c '[ -f ./easyrsa3/vars.bat.temp ] && mv ./easyrsa3/vars.bat.temp ./easyrsa3/vars.bat'
-        - sh -c 'export VERBOSE=1;  cd easyrsa3; easyrsa --batch; ./easyrsa --batch show-ca'
+        - sh -c 'export VERBOSE=1;  cd easyrsa3; easyrsa --batch upgrade pki; ./easyrsa --batch show-ca'
 
     - os: osx
       osx_image: xcode10.1
@@ -24,5 +24,5 @@ matrix:
         - sh -c '[ -f ./easyrsa3/vars.bat ] && mv ./easyrsa3/vars.bat ./easyrsa3/vars.bat.temp'
         - sh op_test.sh -vv
         - sh -c '[ -f ./easyrsa3/vars.bat.temp ] && mv ./easyrsa3/vars.bat.temp ./easyrsa3/vars.bat'
-        - sh -c 'export VERBOSE=1;  cd easyrsa3; ./easyrsa --batch; ./easyrsa --batch show-ca'
+        - sh -c 'export VERBOSE=1;  cd easyrsa3; ./easyrsa --batch upgrade pki; ./easyrsa --batch show-ca'
 
