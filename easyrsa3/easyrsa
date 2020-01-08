@@ -1656,7 +1656,7 @@ Note: using Easy-RSA configuration from: $vars"
 	if [ ! -f "$EASYRSA_SSL_CONF" ] && [ -f "$EASYRSA/openssl-easyrsa.cnf" ] && [ -d "$EASYRSA_PKI" ];
 	then
 		cp "$EASYRSA/openssl-easyrsa.cnf" "$EASYRSA_SSL_CONF"
-		easyrsa_openssl makesafeconfopenvpn
+		easyrsa_openssl makesafeconf
 	fi
 
 } # vars_setup()
@@ -1766,9 +1766,9 @@ up23_verify_current_ca ()
 {
 	up23_verbose "> Find CA .."
 	# $KEY_DIR is assigned in up23_verify_current_pki ()
-	[ -f "$KEY_DIR/ca.crt" ] || up23_fail_upgrade "Cannot find current ca.crt: $KEY_DIR/ca.crt"
+	[ -f "$KEY_DIR/ca.crt" ] \
+	|| up23_fail_upgrade "Cannot find current ca.crt: $KEY_DIR/ca.crt"
 	up23_verbose "> OK"
-	up23_verbose "  Current CA found in:  $KEY_DIR/ca.crt"
 
 	# If CA is already verified then return
 	in_file="$KEY_DIR/ca.crt"
@@ -1780,12 +1780,18 @@ up23_verify_current_ca ()
 	CA_SUBJECT="$(easyrsa_openssl $format -in "$in_file" -subject -noout -nameopt multiline)"
 
 	# Extract individual elements
-	CA_countryName="$(echo "$CA_SUBJECT" | grep countryName | sed "s\`^.*=\ \`\`g")"
-	CA_stateOrProvinceName="$(echo "$CA_SUBJECT" | grep stateOrProvinceName | sed "s\`^.*=\ \`\`g")"
-	CA_localityName="$(echo "$CA_SUBJECT" | grep localityName | sed "s\`^.*=\ \`\`g")"
-	CA_organizationName="$(echo "$CA_SUBJECT" | grep organizationName | sed "s\`^.*=\ \`\`g")"
-	CA_organizationalUnitName="$(echo "$CA_SUBJECT" | grep organizationalUnitName | sed "s\`^.*=\ \`\`g")"
-	CA_emailAddress="$(echo "$CA_SUBJECT" | grep emailAddress | sed "s\`^.*=\ \`\`g")"
+	CA_countryName="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep countryName | sed "s\`^.*=\ \`\`g")"
+	CA_stateOrProvinceName="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep stateOrProvinceName | sed "s\`^.*=\ \`\`g")"
+	CA_localityName="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep localityName | sed "s\`^.*=\ \`\`g")"
+	CA_organizationName="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep organizationName | sed "s\`^.*=\ \`\`g")"
+	CA_organizationalUnitName="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep organizationalUnitName | sed "s\`^.*=\ \`\`g")"
+	CA_emailAddress="$(printf "%s\n" "$CA_SUBJECT" \
+	| grep emailAddress | sed "s\`^.*=\ \`\`g")"
 
 	# Match the current CA elements to the vars file settings
 	CA_vars_match=1
@@ -1811,7 +1817,8 @@ up23_verify_current_ca ()
 	then
 		up23_show_current_ca
 	fi
-	confirm "* Confirm CA shown above is correct: " "yes" "Found current CA at: $KEY_DIR/ca.crt"
+	confirm "* Confirm CA shown above is correct: " "yes" \
+	"Found current CA at: $KEY_DIR/ca.crt"
 	CURRENT_CA_IS_VERIFIED="$in_file"
 } #=> up23_verify_current_ca ()
 
@@ -1822,7 +1829,7 @@ up23_show_current_ca ()
 	# shellcheck disable=SC2086
 	easyrsa_openssl $format -in "$in_file" -noout -text\
 	-nameopt multiline $opts || die "\
-	OpenSSL failure to process the input"
+	OpenSSL failure to process the input CA certificate: $in_file"
 	printf "%s\n" "-------------------------------------------------------------------------"
 } #=> up23_show_current_ca ()
 
@@ -1894,7 +1901,7 @@ up23_upgrade_ca ()
 	then
 		if grep -q 'unique_subject = no' "$EASYRSA_PKI/index.txt.attr"
 		then
-			# If index.txt.attr exists and "unique_suject - no" then do nothing
+			# If index.txt.attr exists and "unique_suject = no" then do nothing
 			return 0
 		fi
 	else
@@ -1903,7 +1910,8 @@ up23_upgrade_ca ()
 	fi
 
 	# Otherwise this is required for all easyrsa v3
-	#confirm "Set 'unique_subject = no' in index.txt.attr for your current CA: " "yes" "This version of easyrsa requires that 'unique_subject = no' is set correctly"
+	#confirm "Set 'unique_subject = no' in index.txt.attr for your current CA: " \
+	#"yes" "This version of easyrsa requires that 'unique_subject = no' is set correctly"
 	
 	printf "%s\n" "unique_subject = no" > "$EASYRSA_PKI/index.txt.attr"
 	up23_verbose "> OK"
@@ -2219,20 +2227,23 @@ A backup of your current PKI is here:
                         * IMPORTANT NOTICE *
 
 1. YOU MUST VERIFY THAT YOUR NEW ./vars FILE IS SETUP CORRECTLY
-
 2. IF YOU ARE USING WINDOWS YOU MUST ENSURE THAT openssl IS CORRECTLY DEFINED
    IN ./vars (example follows)
 
-   # This sample is in Windows syntax -- edit it for your path if not using PATH:
-   #set_var EASYRSA_OPENSSL      \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
-   or
-   #set_var EASYRSA_OPENSSL      \"C:/Program Files/Openvpn/bin/openssl.exe\"
-
+ #
+ # This sample is in Windows syntax -- edit it for your path if not using PATH:
+ # set_var EASYRSA_OPENSSL   \"C:/Program Files/OpenSSL-Win32/bin/openssl.exe\"
+ #
+ # Alternate location (Note: Forward slash '/' is correct for Windpws):
+ # set_var EASYRSA_OPENSSL   \"C:/Program Files/Openvpn/bin/openssl.exe\"
+ #
 
 3. Finally, you can verify that easyrsa works by using these two commands:
     ./easyrsa show-ca (Verify that your CA is intact and correct)
     ./easyrsa gen-crl ((re)-generate a CRL file)
-"
+
+Further info:
+* https://community.openvpn.net/openvpn/wiki/easyrsa-upgrade"
           up23_verbose "
                    * UPGRADE COMPLETED SUCCESSFULLY *
 "
