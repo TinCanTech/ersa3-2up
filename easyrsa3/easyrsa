@@ -2080,7 +2080,7 @@ up23_do_upgrade_23 ()
 
 up23_manage_upgrade_23 ()
 {
-	EASYRSA_UPGRADE_VERSION="v0.99b(20200105)"
+	EASYRSA_UPGRADE_VERSION="v1.0a (2020/01/08)"
 	EASYRSA_UPGRADE_TYPE="$1"
 
 	# Verify all existing versions of vars/vars.bat
